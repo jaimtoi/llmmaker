@@ -534,17 +534,24 @@
   const tokenBox = $('#tokenBox'), embedBox = $('#embedBox'), mTokens = $('#mTokens'), mDim = $('#mDim'), mSource = $('#mSource');
 
   function simpleTokenizer(str){
-    // Fallback tokenizer using Intl.Segmenter + punctuation split
+    // 안정성 보강: Segmenter가 없거나 예외가 발생하면 단순 공백 기반 분할로 폴백
     if(!str) return [];
-    const seg = ('Segmenter' in Intl) ? new Intl.Segmenter('ko', { granularity:'word' }) : null;
-    const words = seg ? Array.from(seg.segment(str)).map(s => s.segment) : str.split(/\s+/g);
-    const tokens = [];
-    for(const w of words){
-      if(!w.trim()) continue;
-      const parts = w.split(/([.,!?;:"'(){}\[\]<>/\\\-_=+*^%$#@`~|…])/g).filter(Boolean);
-      tokens.push(...parts.filter(p=>p.trim()!==''));
+    try{
+      const seg = ('Segmenter' in Intl) ? new Intl.Segmenter('ko', { granularity:'word' }) : null;
+      const words = seg ? Array.from(seg.segment(str)).map(s => s.segment) : str.split(/\s+/g);
+      const tokens = [];
+      for(const w of words){
+        if(!w || !w.trim()) continue;
+        // ⚠️ 여기에 있던 '/' 미이스케이프 문제를 고쳤습니다: '\/'
+        // 또한 특수문자 분리를 안정적으로 적용
+        const parts = w.split(/([.,!?;:"'(){}\[\]<>\/\\\-_=+*^%$#@`~|…])/g).filter(Boolean);
+        tokens.push(...parts.filter(p=>p.trim()!==''));
+      }
+      return tokens;
+    }catch(e){
+      // 매우 드문 환경(구형 브라우저 등)을 위한 폴백
+      return str.match(/\S+/g) || [];
     }
-    return tokens;
   }
 
   async function refreshTokenAndEmbedding(){
@@ -565,6 +572,11 @@
     embedBox.textContent = '임베딩 계산 중... ';
     try{
       let vectors = [];
+      if(first50.length===0){
+        embedBox.textContent = '임베딩할 토큰이 없습니다.';
+        mDim.textContent = '-';
+        return;
+      }
       if(state.provider==='openai'){
         if(!state.openaiKey) throw new Error('OpenAI API Key가 필요합니다.');
         const body = { model:'text-embedding-3-small', input: first50 };
@@ -575,7 +587,7 @@
           const t = await res.text(); throw new Error('OpenAI 임베딩 오류: ' + t);
         }
         const data = await res.json();
-        vectors = (data.data||[]).map(d=>d.embedding);
+        vectors = (data.data||[]).map(d=>d.embedding || d);
       }else{
         if(!state.geminiKey) throw new Error('Gemini API Key가 필요합니다.');
         const url = 'https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:batchEmbedContents?key='+encodeURIComponent(state.geminiKey);
@@ -585,17 +597,24 @@
         const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
         if(!res.ok){ const t = await res.text(); throw new Error('Gemini 임베딩 오류: ' + t); }
         const data = await res.json();
-        vectors = (data.embeddings||[]).map(e=>e.values);
+        vectors = (data.embeddings||[]).map(e=>e.values || e);
       }
+
       const dim = vectors?.[0]?.length || '-';
       mDim.textContent = String(dim);
+
+      // 숫자 포맷터: 숫자가 아닌 값이 나오더라도 안전하게 처리
+      const formatNum = (n) => (typeof n === 'number' && isFinite(n)) ? n.toFixed(4) : (String(n).length>12 ? String(n).slice(0,12) + '...' : String(n));
       const lines = [];
       first50.forEach((tok,i)=>{
         const v = vectors[i] || [];
-        lines.push(`${i+1}. "${tok}" → [${v.slice(0,12).map(n=>Number(n).toFixed(4)).join(', ')}${v.length>12?' …':''}] (dim=${v.length})`);
+        const shown = Array.isArray(v) ? v.slice(0,12).map(formatNum).join(', ') : String(v);
+        const dimi = Array.isArray(v) ? v.length : (v ? (v.length||String(v).length) : 0);
+        lines.push(`${i+1}. "${tok}" → [${shown}${(Array.isArray(v) && v.length>12)?' …':''}] (dim=${dimi})`);
       });
       embedBox.textContent = lines.join('\n');
     }catch(err){
+      // 사용자에게 친절한 에러 메시지 표시
       embedBox.textContent = '오류: ' + (err?.message || err);
       mDim.textContent = '-';
     }
