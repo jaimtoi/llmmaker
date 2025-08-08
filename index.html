@@ -2,834 +2,635 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>LLM 실험 UI - Chat + 설정/토큰화/임베딩/파라미터/프롬프트</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>LLM 실험 UI — Chat + Settings</title>
 <style>
   :root{
-    --bg:#f5f6f8;
-    --card:#ffffff;
-    --text:#0f172a;
-    --muted:#6b7280;
-    --accent:#007aff; /* Apple blue */
-    --accent-2:#34c759; /* Apple green */
-    --danger:#ff3b30;
-    --shadow:0 10px 30px rgba(0,0,0,.06);
-    --radius:14px;
+    --bg: #0b0b0c;
+    --panel: #111214;
+    --panel-2: #0f1115;
+    --elev: #181a1f;
+    --text: #e8eaed;
+    --muted: #9aa0a6;
+    --brand: #0a84ff;
+    --brand-2:#64d2ff;
+    --ok:#34c759;
+    --warn:#ff9f0a;
+    --error:#ff453a;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --shadow: 0 8px 24px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.02) inset;
+    --shadow-soft: 0 6px 18px rgba(0,0,0,0.28);
+    --border: 1px solid rgba(255,255,255,0.06);
+    --input: #0c0d10;
+    --accent: linear-gradient(135deg, #0a84ff, #64d2ff);
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f5f7fb; --panel:#ffffff; --panel-2:#fbfbfd; --elev:#ffffff; --text:#121212; --muted:#5f6368;
+      --border: 1px solid rgba(0,0,0,0.08); --input:#f2f3f7; --shadow: 0 8px 24px rgba(0,0,0,0.06), 0 1px 0 rgba(0,0,0,0.02) inset;
+      --shadow-soft:0 6px 18px rgba(0,0,0,0.06);
+    }
   }
   *{box-sizing:border-box}
-  html,body{height:100%;}
+  html,body{height:100%}
   body{
-    margin:0;
-    font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text","Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", Arial, sans-serif;
-    color:var(--text);
-    background:linear-gradient(180deg,#fbfbfd, #eef1f6 60%, #e9edf3);
+    margin:0; background: radial-gradient(1200px 1200px at 80% -10%, rgba(10,132,255,0.07), transparent 45%) , var(--bg);
+    color:var(--text); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Display","SF Pro Text","Apple SD Gothic Neo","Noto Sans KR",system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    letter-spacing:-0.2px;
   }
-
-  /* Toggle button (always visible, top-right, not overlapping tabs) */
-  .toggle-btn{
-    position:fixed;
-    top:12px;
-    right:12px;
-    z-index:1000;
-    background:var(--card);
-    border:1px solid #e6e8ef;
-    color:var(--text);
-    padding:10px 14px;
-    border-radius:999px;
-    box-shadow:var(--shadow);
-    cursor:pointer;
-    user-select:none;
-    transition:transform .15s ease, box-shadow .15s ease;
-  }
-  .toggle-btn:hover{ box-shadow:0 12px 24px rgba(0,0,0,.08); transform:translateY(-1px); }
-
-  /* App layout */
   .app{
-    display:flex;
-    gap:14px;
-    height:100%;
-    padding:64px 14px 14px 14px; /* top padding to avoid toggle overlap */
+    position:relative; height:100vh; width:100%; display:flex; gap:18px; padding:18px;
   }
-  .app.collapsed{
-    justify-content:center;
+  .left{
+    width:370px; min-width:370px; max-width:370px;
+    background:var(--panel); border-radius:var(--radius); box-shadow:var(--shadow); border:var(--border);
+    display:flex; flex-direction:column; overflow:hidden;
   }
-
-  /* Left panel (chat) fixed width 370px */
-  .left-panel{
-    width:370px;
-    min-width:370px;
-    max-width:370px;
-    background:var(--card);
-    border:1px solid #e6e8ef;
-    border-radius:var(--radius);
-    box-shadow:var(--shadow);
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-  }
-  .chat-window{ display:flex; flex-direction:column; height:100%; }
-  .messages{
-    flex:1;
-    overflow:auto;
-    padding:18px;
-    background:linear-gradient(180deg,#fafbfd, #f3f6fb);
-  }
-  .bubble{
-    max-width:80%;
-    padding:12px 14px;
-    border-radius:16px;
-    margin:6px 0;
-    line-height:1.45;
-    word-break:break-word;
-    white-space:pre-wrap;
-    box-shadow:0 4px 16px rgba(0,0,0,.06);
-  }
-  .user{ background:#e7f0ff; color:#0b2a5a; align-self:flex-end; border-top-right-radius:6px; }
-  .assistant{ background:#ffffff; color:var(--text); align-self:flex-start; border-top-left-radius:6px; }
-  .sys{ background:#f1f5f9; color:#334155; border:1px dashed #dfe3ea; }
-  .meta{
-    font-size:12px; color:var(--muted); margin-top:2px;
+  .left .header{
+    padding:12px 14px; border-bottom:var(--border); display:flex; align-items:center; gap:8px;
   }
   .home-chip{
-    position:absolute;
-    right:18px;
-    bottom:64px;
-    background:#eef2ff;
-    color:#334155;
-    font-size:12px;
-    padding:6px 10px;
-    border-radius:999px;
-    border:1px solid #dfe3f0;
-    box-shadow:var(--shadow);
-    pointer-events:none;
+    margin-left:auto; background:var(--input); color:var(--muted); padding:6px 10px; border-radius:999px; font-size:12px; border:var(--border);
   }
-  .input-row{
-    display:flex; gap:8px;
-    padding:10px;
-    border-top:1px solid #e6e8ef;
-    background:rgba(255,255,255,.9);
-    backdrop-filter:saturate(180%) blur(10px);
-    position:relative;
+  .chat{
+    flex:1; overflow:auto; padding:12px; background:
+      radial-gradient(800px 500px at -10% 0%, rgba(100,210,255,0.06), transparent 60%),
+      linear-gradient(to bottom, rgba(255,255,255,0.02), transparent 10%);
   }
-  .input-row input{
-    flex:1;
-    padding:12px 14px;
-    border-radius:12px;
-    border:1px solid #e5e7eb;
-    outline:none;
-    font-size:14px;
-    background:#fff;
+  .msg{
+    max-width:86%; margin:8px 0; padding:10px 12px; border-radius:14px; box-shadow:var(--shadow-soft); border:var(--border); backdrop-filter:saturate(140%) blur(2px);
   }
-  .icon-btn{
-    min-width:44px; height:44px;
-    border:none;
-    border-radius:12px;
-    background:var(--accent);
-    color:#fff;
-    cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:0 8px 18px rgba(0,122,255,.24);
-    transition:transform .1s ease, box-shadow .1s ease, opacity .2s ease;
+  .msg.user{ margin-left:auto; background:linear-gradient(180deg, rgba(10,132,255,0.16), rgba(10,132,255,0.10)); border:1px solid rgba(10,132,255,0.35);}
+  .msg.ai{ background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));}
+  .input-area{
+    padding:12px; border-top:var(--border); background:linear-gradient(180deg, rgba(255,255,255,0.03), transparent);
+    display:flex; gap:8px; align-items:center;
   }
-  .icon-btn:disabled{ opacity:.5; cursor:not-allowed; }
-  .icon-btn:hover{ transform:translateY(-1px); box-shadow:0 10px 22px rgba(0,122,255,.3); }
+  .input{ flex:1; position:relative }
+  .input input{
+    width:100%; border-radius:12px; padding:12px 44px 12px 12px; outline:none; background:var(--input); color:var(--text); border:var(--border);
+  }
+  .send-btn{
+    position:absolute; right:6px; top:50%; transform:translateY(-50%);
+    width:34px; height:34px; border-radius:10px; border:var(--border); background:var(--panel-2); cursor:pointer;
+    display:grid; place-items:center; box-shadow:var(--shadow-soft);
+  }
+  .send-btn:hover{ background:linear-gradient(180deg, rgba(10,132,255,0.15), rgba(10,132,255,0.05)); }
+  .send-btn svg{ width:18px; height:18px; fill:var(--text); opacity:.8}
 
-  /* Right panel (settings etc) */
-  .right-panel{
-    flex:1;
-    min-width:0;
-    background:var(--card);
-    border:1px solid #e6e8ef;
-    border-radius:var(--radius);
-    box-shadow:var(--shadow);
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
+  .right{
+    flex:1; min-width:420px; background:var(--panel); border-radius:var(--radius); box-shadow:var(--shadow); border:var(--border);
+    display:flex; flex-direction:column; overflow:hidden; position:relative;
   }
-  .right-panel.hidden{ display:none; }
-
   .tabs{
-    padding:10px;
-    border-bottom:1px solid #eef0f4;
-    display:flex; gap:6px;
-    background:linear-gradient(180deg,#ffffff 0%, #fafcff 100%);
+    display:flex; gap:8px; padding:12px; border-bottom:var(--border); background:linear-gradient(180deg, rgba(255,255,255,0.03), transparent);
   }
   .tab{
-    padding:10px 14px;
-    border-radius:10px;
-    border:1px solid #e8ebf2;
-    background:#ffffff;
-    cursor:pointer;
-    font-weight:600;
-    color:#334155;
+    padding:10px 14px; border-radius:12px; background:var(--panel-2); cursor:pointer; border:var(--border);
+    color:var(--muted); transition: all .2s ease; white-space:nowrap;
   }
-  .tab.active{
-    background:#111827; color:#fff; border-color:#111827;
-  }
-
-  .content{
-    padding:16px;
-    overflow:auto;
-    height:100%;
-  }
-  .section{
-    background:#fcfdff;
-    border:1px solid #edf0f5;
-    border-radius:12px;
-    padding:16px;
-    margin-bottom:14px;
-  }
-  .row{ display:flex; gap:10px; align-items:center; }
-  .row + .row{ margin-top:10px; }
-  .label{ width:160px; color:#374151; font-weight:600; }
-  .control{ flex:1; min-width:0; }
+  .tab.active{ color:var(--text); background:linear-gradient(180deg, rgba(10,132,255,0.16), rgba(10,132,255,0.08)); border-color:rgba(10,132,255,0.35)}
+  .content{ flex:1; overflow:auto; padding:16px 18px 26px 18px; }
+  .row{ display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap }
+  .col{ flex:1; min-width:240px }
+  label{ display:block; font-weight:600; margin:10px 0 6px 2px; font-size:13px; color:var(--muted)}
   input[type="text"], input[type="password"], textarea, select{
-    width:100%; padding:12px 12px; border-radius:10px; border:1px solid #e5e7eb; outline:none; font-size:14px; background:#fff;
+    width:100%; background:var(--input); color:var(--text); border:var(--border); border-radius:12px; padding:12px; outline:none;
   }
-  textarea{ min-height:120px; resize:vertical; }
-  .hint{ font-size:12px; color:var(--muted); margin-top:6px; }
-  .save-row{ display:flex; gap:8px; justify-content:flex-end; }
+  textarea{ min-height:110px; resize:vertical }
   .btn{
-    border:none; padding:10px 14px; border-radius:10px; cursor:pointer;
-    background:#111827; color:#fff; font-weight:700;
+    appearance:none; border:none; padding:12px 16px; border-radius:12px; color:white; background:var(--accent); cursor:pointer;
+    box-shadow:var(--shadow-soft); transition: transform .04s ease;
   }
-  .btn.secondary{ background:#e5e7eb; color:#111827; }
-  .btn.success{ background:var(--accent-2); }
-
-  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .grid-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
-
-  /* Token/Embedding display */
-  .token-list{ display:flex; flex-wrap:wrap; gap:8px; }
-  .token{
-    border:1px solid #e5e7eb; border-radius:999px; padding:6px 10px; background:#fff;
-    font-size:12px; color:#111827;
+  .btn:active{ transform: translateY(1px) }
+  .btn.ghost{ background:var(--panel-2); color:var(--text); border:var(--border) }
+  .inline{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+  .note{ color:var(--muted); font-size:13px }
+  .hr{ height:1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent); margin:16px 0 }
+  .metrics{ display:flex; gap:14px; flex-wrap:wrap; margin:12px 0 }
+  .metric{
+    background:var(--panel-2); border:var(--border); padding:10px 12px; border-radius:12px; color:var(--muted); font-size:13px;
   }
-  .embed-box{
-    background:#fff; border:1px solid #e7e9ef; border-radius:10px; padding:12px; max-height:260px; overflow:auto; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:12px;
+  .scrollbox{
+    max-height:240px; overflow:auto; padding:10px; background:var(--panel-2); border:var(--border); border-radius:12px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    white-space:pre-wrap; word-break:break-word;
   }
-  details{ background:#f9fafb; border:1px solid #eceff5; border-radius:10px; padding:8px 10px; margin-bottom:8px; }
-  summary{ cursor:pointer; font-weight:600; color:#1f2937; }
+  .slider-row{ width:80%; min-width:320px }
+  input[type="range"]{ width:100% }
+  .desc{ font-size:12px; color:var(--muted); margin-top:6px }
+  .toast{
+    position:fixed; right:20px; bottom:20px; padding:12px 14px; background:var(--elev); border:var(--border); border-radius:12px; box-shadow:var(--shadow-soft);
+    display:none; z-index:1000;
+  }
+  .toggle-llm{
+    position:fixed; right:20px; top:14px; z-index:999; padding:10px 14px; border-radius:999px; background:var(--elev); border:var(--border); color:var(--text);
+    box-shadow:var(--shadow-soft); cursor:pointer; display:flex; align-items:center; gap:8px;
+  }
+  .toggle-llm svg{ width:16px; height:16px; fill:var(--text); opacity:.85 }
 
-  /* Modal for prompt preview */
+  .centered{ margin:0 auto }
+  .hidden{ display:none !important }
+
+  /* Modal */
   .modal-backdrop{
-    position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center; z-index:999;
+    position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:1001;
   }
   .modal{
-    width:min(860px, 92vw);
-    background:#fff; border-radius:16px; box-shadow:0 30px 80px rgba(0,0,0,.25);
+    width:min(880px, 92vw); max-height:80vh; overflow:auto; background:var(--panel); border:var(--border); border-radius:16px; box-shadow:var(--shadow);
     padding:18px;
-    border:1px solid #e6e8ef;
   }
-  .modal-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-  .modal-title{ font-size:16px; font-weight:800; }
-  .close-x{ cursor:pointer; font-size:22px; line-height:1; padding:4px 8px; border-radius:8px; }
-  .modal pre{ max-height:60vh; overflow:auto; background:#f7f8fb; border:1px solid #eceff5; padding:12px; border-radius:12px; }
-
-  /* Toast */
-  .toast{
-    position:fixed; bottom:18px; right:18px;
-    background:#111827; color:#fff; padding:10px 14px; border-radius:10px; opacity:0; transform:translateY(8px); transition:opacity .25s ease, transform .25s ease; z-index:1001;
+  .modal h3{ margin:0 0 8px }
+  .modal .close{ margin-left:auto }
+  .kicker{ font-size:12px; color:var(--muted); margin-bottom:10px }
+  .spinner{
+    width:16px; height:16px; border-radius:50%; border:3px solid rgba(255,255,255,0.2); border-top-color:#fff; animation:spin 1s linear infinite; display:inline-block; vertical-align:middle;
   }
-  .toast.show{ opacity:1; transform:translateY(0); }
-
-  /* Hidden helper */
-  .hidden{ display:none; }
+  @keyframes spin{ to{ transform:rotate(360deg)} }
 </style>
 </head>
 <body>
-  <div id="toggleBtn" class="toggle-btn">LLM 설정 숨기기</div>
+  <button id="toggleLLM" class="toggle-llm" title="2번 영역 토글">
+    <svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h12v2H3v-2z"/></svg>
+    <span>LLM 설정 숨기기/표시</span>
+  </button>
 
-  <div id="app" class="app">
-    <!-- Left: Chat (fixed width 370px) -->
-    <div class="left-panel" id="leftPanel">
-      <div class="chat-window">
-        <div id="messages" class="messages"></div>
-        <div class="home-chip">Home</div>
-        <div class="input-row">
-          <input id="chatInput" type="text" placeholder="메시지를 입력하세요." />
-          <button id="sendBtn" class="icon-btn" title="보내기">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <path d="M3 11L21 3L13 21L11 13L3 11Z" stroke="white" stroke-width="2" stroke-linejoin="round"/>
-            </svg>
+  <div class="app" id="app">
+    <!-- Left: Chat (1) -->
+    <section class="left" id="leftPanel">
+      <div class="header">
+        <strong>Chat</strong>
+        <span style="color:var(--muted); font-size:12px">1번 영역</span>
+        <span class="home-chip">Home</span>
+      </div>
+      <div class="chat" id="chat"></div>
+      <div class="input-area">
+        <div class="input">
+          <input id="chatInput" placeholder="메시지를 입력하세요." />
+          <button class="send-btn" id="sendBtn" title="전송">
+            <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
           </button>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Right: Settings / Tabs -->
-    <div class="right-panel" id="rightPanel">
-      <div class="tabs">
+    <!-- Right: Settings (2) -->
+    <section class="right" id="rightPanel">
+      <div class="tabs" id="tabs">
         <button class="tab active" data-tab="settings">설정</button>
         <button class="tab" data-tab="token">토큰화와 임베딩</button>
         <button class="tab" data-tab="params">파라미터 실험실</button>
         <button class="tab" data-tab="prompt">프롬프트 엔지니어링</button>
       </div>
       <div class="content">
-        <!-- Tab: 설정 (기본 화면) -->
-        <div id="tab-settings" class="tab-pane">
-          <div class="section">
-            <div class="row">
-              <div class="label">LLM 선택</div>
-              <div class="control">
-                <select id="llmSelect">
-                  <option value="openai">ChatGPT (OpenAI)</option>
-                  <option value="gemini">Gemini (Google)</option>
-                </select>
-                <div class="hint">ChatGPT 또는 Gemini 중 하나를 선택하세요.</div>
-              </div>
+        <!-- Settings -->
+        <div id="tab-settings">
+          <div class="row">
+            <div class="col">
+              <label>LLM 선택</label>
+              <select id="llmSelect">
+                <option value="openai">ChatGPT (OpenAI)</option>
+                <option value="gemini">Gemini (Google)</option>
+              </select>
+              <div class="desc">대화 및 임베딩 제공자를 선택합니다.</div>
             </div>
-            <div class="row">
-              <div class="label">API Key</div>
-              <div class="control">
-                <input id="apiKey" type="password" placeholder="API Key를 입력하세요" autocomplete="off" />
-                <div class="hint">브라우저에서 직접 호출하므로, 키 보안에 유의해 주세요.</div>
-              </div>
+            <div class="col">
+              <label id="apiLabel">API Key</label>
+              <input id="apiKey" type="password" placeholder="키를 입력하세요" autocomplete="off" />
+              <div class="desc">키는 로컬 저장소에만 보관됩니다.</div>
             </div>
-            <div class="row">
-              <div class="label">System Prompt</div>
-              <div class="control">
-                <textarea id="systemPrompt" maxlength="2000" placeholder="모델의 기본 역할/스타일을 정의하세요 (최대 2000자)"></textarea>
-                <div class="hint">예: 당신은 친절하고 간결한 한국어 비서입니다.</div>
-              </div>
-            </div>
-            <div class="save-row">
-              <button class="btn success" id="saveSettings">저장</button>
-            </div>
+          </div>
+
+          <label>System Prompt (최대 2000자)</label>
+          <textarea id="systemPrompt" maxlength="2000" placeholder="대화의 기본 성격과 규칙을 정의하세요."></textarea>
+
+          <div class="hr"></div>
+          <div class="inline">
+            <button class="btn" id="saveSettings">저장</button>
+            <span class="note">기본 화면은 ‘설정’ 탭입니다.</span>
           </div>
         </div>
 
-        <!-- Tab: 토큰화와 임베딩 -->
-        <div id="tab-token" class="tab-pane hidden">
-          <div class="section">
-            <div class="row">
-              <div class="label">대상 문장</div>
-              <div class="control">
-                <input id="sourceText" type="text" placeholder="왼쪽 채팅의 마지막 사용자 메시지가 자동으로 채워집니다." />
-                <div class="hint">수정 후 다시 분석할 수 있습니다.</div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="label">토큰화 결과</div>
-              <div class="control">
-                <div id="tokenList" class="token-list"></div>
-                <div class="hint">간단한 규칙(공백/문장부호 기준)으로 토큰화합니다.</div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="label">임베딩 벡터 결과</div>
-              <div class="control">
-                <div id="embeddingResults" class="embed-box"></div>
-                <div class="hint">스크롤하여 전체 벡터를 확인하세요.</div>
-              </div>
-            </div>
+        <!-- Tokenization & Embedding -->
+        <div id="tab-token" class="hidden">
+          <div class="note">왼쪽 채팅에 입력한 마지막 문장을 기반으로 토큰화하고, 각 토큰의 임베딩을 계산합니다. 최대 50개 토큰까지만 임베딩을 요청합니다.</div>
+          <div class="hr"></div>
+          <label>토큰화 결과</label>
+          <div id="tokenBox" class="scrollbox">아직 분석할 문장이 없습니다. 먼저 왼쪽에서 메시지를 입력해 주세요.</div>
+
+          <label style="margin-top:14px">임베딩 벡터 결과</label>
+          <div id="embedBox" class="scrollbox">토큰을 분석한 뒤 여기에 표시됩니다.</div>
+
+          <div class="metrics">
+            <div class="metric">총 토큰: <strong id="mTokens">0</strong></div>
+            <div class="metric">벡터(차원): <strong id="mDim">-</strong></div>
+            <div class="metric">원본문자: <strong id="mSource">-</strong></div>
           </div>
 
-          <div class="section grid-3">
-            <div><strong>총 토큰</strong><div id="totalTokens">0</div></div>
-            <div><strong>벡터(차원)</strong><div id="vectorDim">-</div></div>
-            <div><strong>원본문자</strong><div id="origText">-</div></div>
-          </div>
-
-          <div class="save-row">
-            <button class="btn" id="analyzeBtn">재분석(토큰화/임베딩)</button>
-          </div>
-
-          <div class="section">
-            <h4 style="margin:0 0 8px 0;">이해하기</h4>
-            <div style="color:#374151; line-height:1.6;">
-              <p style="margin:0 0 8px 0;">토큰화는 AI가 텍스트를 이해하기 위한 첫 번째 단계입니다. 긴 텍스트를 '토큰'이라는 작은 의미 단위로 나누어 컴퓨터가 처리할 수 있게 만듭니다.</p>
-              <p style="margin:0;">임베딩은 각 토큰을 수치 벡터(숫자의 배열)로 변환하는 과정입니다. 비슷한 의미의 단어들은 벡터 공간에서 가까운 위치에 놓이게 되어, AI가 단어 간의 의미 관계를 수학적으로 계산할 수 있습니다.</p>
-            </div>
+          <div class="hr"></div>
+          <div class="kicker">이해하기</div>
+          <div class="note">
+            토큰화는 AI가 텍스트를 이해하기 위한 첫 번째 단계입니다. 긴 텍스트를 '토큰'이라는 작은 의미 단위로 나누어 컴퓨터가 처리할 수 있게 만듭니다.<br/>
+            임베딩은 각 토큰을 수치 벡터(숫자의 배열)로 변환하는 과정입니다. 비슷한 의미의 단어들은 벡터 공간에서 가까운 위치에 놓이게 되어, AI가 단어 간의 의미 관계를 수학적으로 계산할 수 있습니다.
           </div>
         </div>
 
-        <!-- Tab: 파라미터 실험실 -->
-        <div id="tab-params" class="tab-pane hidden">
-          <div class="section">
-            <div class="row">
-              <div class="label">Temperature (0~1)</div>
-              <div class="control">
-                <input id="temp" type="range" min="0" max="1" step="0.01" />
-                <div class="hint" id="tempHint">무작위성(창의성)을 조절합니다. 높을수록 다양하고 예측 불가한 답변.</div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="label">Top_P (0~1)</div>
-              <div class="control">
-                <input id="topp" type="range" min="0" max="1" step="0.01" />
-                <div class="hint" id="toppHint">확률 상위 p 누적 후보만 고려합니다. 낮을수록 더 보수적.</div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="label">Frequency Penalty (-2~2)</div>
-              <div class="control">
-                <input id="freq" type="range" min="-2" max="2" step="0.01" />
-                <div class="hint" id="freqHint">같은 단어 반복 시 패널티. 높을수록 중복 감소.</div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="label">Presence Penalty (-2~2)</div>
-              <div class="control">
-                <input id="pres" type="range" min="-2" max="2" step="0.01" />
-                <div class="hint" id="presHint">새 주제 도입을 유도합니다. 높을수록 새로운 내용 시도.</div>
-              </div>
-            </div>
-            <div class="save-row">
-              <button class="btn success" id="saveParams">저장</button>
-            </div>
+        <!-- Parameter Lab -->
+        <div id="tab-params" class="hidden">
+          <div class="slider-row">
+            <label>Temperature (0~1)</label>
+            <input type="range" id="p-temp" min="0" max="1" step="0.01" />
+            <div class="desc">값이 높을수록 창의적인 답변, 낮을수록 결정적/일관적 답변이 나옵니다.</div>
           </div>
+          <div class="slider-row">
+            <label>Top_P (0~1)</label>
+            <input type="range" id="p-topP" min="0" max="1" step="0.01" />
+            <div class="desc">확률 질량이 Top-P 이하인 후보만 샘플링합니다. Temperature와 함께 사용합니다.</div>
+          </div>
+          <div class="slider-row">
+            <label>Frequency Penalty (-2~2)</label>
+            <input type="range" id="p-freq" min="-2" max="2" step="0.01" />
+            <div class="desc">같은 단어나 구절의 반복을 줄입니다. (OpenAI에 적용)</div>
+          </div>
+          <div class="slider-row">
+            <label>Presence Penalty (-2~2)</label>
+            <input type="range" id="p-pres" min="-2" max="2" step="0.01" />
+            <div class="desc">새 주제를 도입하도록 유도합니다. (OpenAI에 적용)</div>
+          </div>
+          <div class="hr"></div>
+          <button class="btn" id="saveParams">저장</button>
         </div>
 
-        <!-- Tab: 프롬프트 엔지니어링 -->
-        <div id="tab-prompt" class="tab-pane hidden">
-          <div class="section">
-            <p style="margin:0 0 12px 0; color:#374151;">
-              원하는 답변을 얻기 위해 AI에게 명확하고 효과적으로 지시하는 방법을 배워봅니다.
-              다양한 '블록'을 조합하여 최적의 프롬프트를 직접 만들어 보세요.
-            </p>
-            <h4 style="margin:8px 0 12px 0;">프롬프트 엔지니어링</h4>
-
-            <div class="row">
-              <div class="label">■ 역할/대상 지정</div>
-              <div class="control grid-2">
-                <input id="role" type="text" placeholder="역할 (예: 전문 번역가, 수학 선생님)" />
-                <input id="audience" type="text" placeholder="대상 (예: 초등학생, 비개발자)" />
-              </div>
+        <!-- Prompt Engineering -->
+        <div id="tab-prompt" class="hidden">
+          <div class="note">원하는 답변을 얻기 위해 AI에게 명확하고 효과적으로 지시하는 방법을 배워봅니다. 다양한 '블록'을 조합하여 최적의 프롬프트를 직접 만들어 보세요.</div>
+          <div class="hr"></div>
+          <div class="row">
+            <div class="col">
+              <label>■ 역할/대상 지정</label>
+              <input id="pe-role" type="text" placeholder="예: 당신은 친절한 데이터 분석가입니다. 대상: 초등학생" />
             </div>
-
-            <div class="row">
-              <div class="label">■ 형식 지정</div>
-              <div class="control">
-                <select id="format">
-                  <option>표</option>
-                  <option>목록</option>
-                  <option>블로그</option>
-                  <option>뉴스기사</option>
-                  <option>코드</option>
-                  <option>요약</option>
-                  <option>비교설명</option>
-                  <option>Q&A</option>
-                </select>
-              </div>
+            <div class="col">
+              <label>■ 형식 지정</label>
+              <select id="pe-format">
+                <option>표</option><option>목록</option><option>블로그</option><option>뉴스기사</option><option>코드</option><option>요약</option><option>비교설명</option><option>Q&A</option>
+              </select>
             </div>
-
-            <div class="row">
-              <div class="label">■ 예시 지정</div>
-              <div class="control grid-2">
-                <textarea id="oneShot" placeholder="단일 예시 (One-shot)"></textarea>
-                <textarea id="fewShot" placeholder="복수 예시 (Few-shot) (여러 개 예시를 줄바꿈으로 구분)"></textarea>
-              </div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <label>■ 예시 지정 — 단일 예시 (One-shot)</label>
+              <textarea id="pe-one" placeholder="이 문제에 대한 훌륭한 예시 응답 1개를 적어보세요."></textarea>
             </div>
-
-            <div class="row">
-              <div class="label">■ 조건 추가</div>
-              <div class="control grid-3">
-                <input id="mustInclude" type="text" placeholder="반드시 포함할 내용" />
-                <input id="forbid" type="text" placeholder="금지할 내용" />
-                <input id="maxLen" type="text" placeholder="출력 길이 (200자 이내)" />
-              </div>
+            <div class="col">
+              <label>■ 예시 지정 — 복수 예시 (Few-shot)</label>
+              <textarea id="pe-few" placeholder="여러 개의 예시를 줄바꿈으로 구분해 적어보세요."></textarea>
             </div>
-
-            <div class="save-row">
-              <button class="btn success" id="savePrompt">저장</button>
-              <button class="btn secondary" id="previewPrompt">프롬프트 미리보기</button>
+          </div>
+          <div class="row">
+            <div class="col">
+              <label>■ 조건 추가 — 반드시 포함할 내용</label>
+              <input id="pe-must" type="text" placeholder="반드시 포함할 키워드, 구조 등" />
             </div>
+            <div class="col">
+              <label>■ 조건 추가 — 금지할 내용</label>
+              <input id="pe-ban" type="text" placeholder="피해야 할 표현, 금지 주제 등" />
+            </div>
+            <div class="col">
+              <label>■ 조건 추가 — 출력 길이 (200자 이내)</label>
+              <input id="pe-len" type="text" placeholder="예: 150자 내외" maxlength="200" />
+            </div>
+          </div>
+          <div class="hr"></div>
+          <div class="inline">
+            <button class="btn" id="savePrompt">저장</button>
+            <button class="btn ghost" id="previewPrompt">프롬프트 조합 결과 미리보기</button>
           </div>
         </div>
       </div>
-    </div><!-- /right-panel -->
-  </div><!-- /app -->
+    </section>
+  </div>
 
-  <!-- Modal -->
-  <div id="modalBackdrop" class="modal-backdrop">
+  <!-- Modal for preview -->
+  <div class="modal-backdrop" id="modal">
     <div class="modal">
-      <div class="modal-header">
-        <div class="modal-title">프롬프트 조합 결과 미리보기</div>
-        <div id="modalClose" class="close-x">×</div>
+      <div class="inline" style="justify-content:space-between; align-items:center">
+        <div>
+          <div class="kicker">조합 미리보기</div>
+          <h3 style="margin:0">프롬프트 결과</h3>
+        </div>
+        <button class="btn ghost close" id="closeModal">닫기</button>
       </div>
-      <pre id="modalContent"></pre>
+      <div class="hr"></div>
+      <div id="modalContent" class="scrollbox"></div>
     </div>
   </div>
 
-  <div id="toast" class="toast"></div>
+  <div class="toast" id="toast">저장되었습니다.</div>
 
 <script>
-/* --------------------
-   State & Utilities
----------------------*/
-const $ = (q)=>document.querySelector(q);
-const $$ = (q)=>document.querySelectorAll(q);
+  // State & helpers
+  const $ = (q)=>document.querySelector(q);
+  const $$ = (q)=>document.querySelectorAll(q);
+  const state = {
+    provider: localStorage.getItem('provider') || 'openai',
+    openaiKey: localStorage.getItem('openaiKey') || '',
+    geminiKey: localStorage.getItem('geminiKey') || '',
+    systemPrompt: localStorage.getItem('systemPrompt') || '',
+    params: JSON.parse(localStorage.getItem('params') || '{"temperature":0.7,"top_p":0.9,"frequency_penalty":0.0,"presence_penalty":0.0}'),
+    chatHistory: [],
+    lastUserText: '',
+    pe: JSON.parse(localStorage.getItem('pe') || '{"role":"","format":"목록","one":"","few":"","must":"","ban":"","len":""}')
+  };
 
-const state = {
-  settings:{
-    llm:'openai', // 'openai' | 'gemini'
-    apiKey:'',
-    systemPrompt:'',
-    temperature:0.7,
-    top_p:1,
-    frequency_penalty:0,
-    presence_penalty:0
-  },
-  prompt:{
-    role:'', audience:'', format:'목록',
-    oneShot:'', fewShot:'',
-    mustInclude:'', forbid:'', maxLen:''
-  },
-  chatHistory:[], // {role:'user'|'assistant', content:string}
-  lastUserMessage:''
-};
-
-function loadState(){
-  try{
-    const s = JSON.parse(localStorage.getItem('llm_playground_settings'));
-    if(s) Object.assign(state.settings,s);
-    const p = JSON.parse(localStorage.getItem('llm_playground_prompt'));
-    if(p) Object.assign(state.prompt,p);
-  }catch(e){console.warn(e)}
-}
-function saveSettings(){
-  localStorage.setItem('llm_playground_settings', JSON.stringify(state.settings));
-  toast('설정이 저장되었습니다.');
-}
-function savePrompt(){
-  localStorage.setItem('llm_playground_prompt', JSON.stringify(state.prompt));
-  toast('프롬프트가 저장되었습니다.');
-}
-function toast(msg){
-  const t = $('#toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(()=> t.classList.remove('show'), 1800);
-}
-
-/* --------------------
-   UI Wiring
----------------------*/
-loadState();
-initUI();
-
-function initUI(){
-  // Toggle right panel
-  $('#toggleBtn').addEventListener('click', ()=>{
-    const right = $('#rightPanel');
-    const app = $('#app');
-    const isHidden = right.classList.toggle('hidden');
-    app.classList.toggle('collapsed', isHidden);
-    $('#toggleBtn').textContent = isHidden ? 'LLM 설정 표시' : 'LLM 설정 숨기기';
-  });
+  // UI init
+  const chatEl = $('#chat');
+  const chatInput = $('#chatInput');
+  const sendBtn = $('#sendBtn');
+  const rightPanel = $('#rightPanel');
+  const leftPanel = $('#leftPanel');
+  const toggleLLM = $('#toggleLLM');
+  const apiKeyInput = $('#apiKey');
+  const apiLabel = $('#apiLabel');
+  const llmSelect = $('#llmSelect');
+  const systemPromptInput = $('#systemPrompt');
 
   // Tabs
-  $$('.tab').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      $$('.tab').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
+  const tabs = $$('#tabs .tab');
+  const panes = {
+    settings: $('#tab-settings'),
+    token: $('#tab-token'),
+    params: $('#tab-params'),
+    prompt: $('#tab-prompt')
+  };
+  function setActiveTab(name){
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.tab===name));
+    Object.entries(panes).forEach(([k,v])=> v.classList.toggle('hidden', k!==name));
+    if(name==='token'){ refreshTokenAndEmbedding().catch(()=>{}); }
+  }
+  tabs.forEach(t=> t.addEventListener('click', ()=> setActiveTab(t.dataset.tab)));
+  setActiveTab('settings'); // default
 
-      $$('.tab-pane').forEach(p=>p.classList.add('hidden'));
-      const id = btn.dataset.tab;
-      $('#tab-'+(id === 'settings' ? 'settings' : id)).classList.remove('hidden');
+  // Load settings
+  llmSelect.value = state.provider;
+  systemPromptInput.value = state.systemPrompt;
+  refreshApiFieldLabel();
 
-      if(id==='token'){ syncSourceFromChat(); analyzeTokensAndEmbeddings(); }
-    });
+  function refreshApiFieldLabel(){
+    if(state.provider==='openai'){
+      apiLabel.textContent = 'API Key (OpenAI)';
+      apiKeyInput.placeholder = 'sk-...';
+      apiKeyInput.value = state.openaiKey;
+    }else{
+      apiLabel.textContent = 'API Key (Gemini)';
+      apiKeyInput.placeholder = 'AIza...';
+      apiKeyInput.value = state.geminiKey;
+    }
+  }
+
+  llmSelect.addEventListener('change', (e)=>{
+    state.provider = e.target.value;
+    localStorage.setItem('provider', state.provider);
+    refreshApiFieldLabel();
   });
 
-  // Settings init
-  $('#llmSelect').value = state.settings.llm;
-  $('#apiKey').value = state.settings.apiKey;
-  $('#systemPrompt').value = state.settings.systemPrompt;
-  $('#temp').value = state.settings.temperature;
-  $('#topp').value = state.settings.top_p;
-  $('#freq').value = state.settings.frequency_penalty;
-  $('#pres').value = state.settings.presence_penalty;
-
   $('#saveSettings').addEventListener('click', ()=>{
-    state.settings.llm = $('#llmSelect').value;
-    state.settings.apiKey = $('#apiKey').value.trim();
-    state.settings.systemPrompt = $('#systemPrompt').value;
-    saveSettings();
+    const key = apiKeyInput.value.trim();
+    state.systemPrompt = systemPromptInput.value.trim();
+    localStorage.setItem('systemPrompt', state.systemPrompt);
+    if(state.provider==='openai'){ state.openaiKey = key; localStorage.setItem('openaiKey', key); }
+    else { state.geminiKey = key; localStorage.setItem('geminiKey', key); }
+    toast('저장되었습니다.');
   });
 
   // Params
+  const pTemp = $('#p-temp'), pTopP=$('#p-topP'), pFreq=$('#p-freq'), pPres=$('#p-pres');
+  function syncParamsToUI(){
+    pTemp.value = state.params.temperature;
+    pTopP.value = state.params.top_p;
+    pFreq.value = state.params.frequency_penalty;
+    pPres.value = state.params.presence_penalty;
+  }
+  syncParamsToUI();
   $('#saveParams').addEventListener('click', ()=>{
-    state.settings.temperature = +$('#temp').value;
-    state.settings.top_p = +$('#topp').value;
-    state.settings.frequency_penalty = +$('#freq').value;
-    state.settings.presence_penalty = +$('#pres').value;
-    saveSettings();
-  });
-
-  // Prompt fields init
-  $('#role').value = state.prompt.role;
-  $('#audience').value = state.prompt.audience;
-  $('#format').value = state.prompt.format;
-  $('#oneShot').value = state.prompt.oneShot;
-  $('#fewShot').value = state.prompt.fewShot;
-  $('#mustInclude').value = state.prompt.mustInclude;
-  $('#forbid').value = state.prompt.forbid;
-  $('#maxLen').value = state.prompt.maxLen;
-
-  $('#savePrompt').addEventListener('click', ()=>{
-    state.prompt.role = $('#role').value;
-    state.prompt.audience = $('#audience').value;
-    state.prompt.format = $('#format').value;
-    state.prompt.oneShot = $('#oneShot').value;
-    state.prompt.fewShot = $('#fewShot').value;
-    state.prompt.mustInclude = $('#mustInclude').value;
-    state.prompt.forbid = $('#forbid').value;
-    state.prompt.maxLen = $('#maxLen').value;
-    savePrompt();
-  });
-
-  // Prompt preview modal
-  $('#previewPrompt').addEventListener('click', ()=>{
-    const combined = buildPrompt();
-    $('#modalContent').textContent = combined;
-    $('#modalBackdrop').style.display = 'flex';
-  });
-  $('#modalClose').addEventListener('click', ()=> $('#modalBackdrop').style.display='none');
-  $('#modalBackdrop').addEventListener('click', (e)=>{ if(e.target.id==='modalBackdrop') $('#modalBackdrop').style.display='none'; });
-
-  // Chat sending
-  $('#sendBtn').addEventListener('click', sendMessage);
-  $('#chatInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); sendMessage(); } });
-
-  // If system prompt exists, render as system bubble once
-  if(state.settings.systemPrompt){
-    addBubble('assistant', '시스템 프롬프트가 적용되었습니다.');
-  }
-}
-
-/* --------------------
-   Chat Logic
----------------------*/
-function addBubble(role, text){
-  const wrap = document.createElement('div');
-  wrap.className = 'bubble ' + (role==='user' ? 'user' : (role==='assistant' ? 'assistant' : 'sys'));
-  wrap.textContent = text;
-  $('#messages').appendChild(wrap);
-  // meta time
-  const meta = document.createElement('div');
-  meta.className = 'meta';
-  const dt = new Date();
-  meta.textContent = dt.toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
-  $('#messages').appendChild(meta);
-  $('#messages').scrollTop = $('#messages').scrollHeight;
-}
-
-async function sendMessage(){
-  const input = $('#chatInput');
-  const text = input.value.trim();
-  if(!text) return;
-  input.value='';
-
-  state.lastUserMessage = text;
-  state.chatHistory.push({role:'user', content:text});
-  addBubble('user', text);
-
-  const thinking = document.createElement('div');
-  thinking.className = 'bubble assistant';
-  thinking.textContent = '생각 중…';
-  $('#messages').appendChild(thinking);
-  $('#messages').scrollTop = $('#messages').scrollHeight;
-
-  try{
-    const reply = await callLLM(state.chatHistory);
-    thinking.remove();
-    addBubble('assistant', reply);
-    state.chatHistory.push({role:'assistant', content:reply});
-  }catch(err){
-    console.error(err);
-    thinking.remove();
-    addBubble('assistant', '오류가 발생했습니다: ' + (err.message || err));
-  }
-}
-
-/* --------------------
-   LLM API Calls
----------------------*/
-async function callLLM(history){
-  const {llm, apiKey, systemPrompt, temperature, top_p, frequency_penalty, presence_penalty} = state.settings;
-  if(!apiKey) throw new Error('설정 탭에서 API Key를 입력해 주세요.');
-
-  if(llm==='openai'){
-    // Convert to OpenAI chat format
-    const messages = [];
-    if(systemPrompt) messages.push({role:'system', content: systemPromptWithEngineered()});
-    for(const m of history){
-      messages.push({role: m.role, content: m.content});
-    }
-
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization':'Bearer ' + apiKey
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages,
-        temperature, top_p,
-        frequency_penalty, presence_penalty
-      })
-    });
-    const data = await res.json();
-    if(!res.ok) throw new Error((data.error && data.error.message) || 'OpenAI 오류');
-    return data.choices?.[0]?.message?.content?.trim() || '';
-  }else{
-    // Gemini
-    const contents = [];
-    for(const m of history){
-      contents.push({
-        role: m.role==='user' ? 'user' : 'model',
-        parts:[{text: m.content}]
-      });
-    }
-
-    const body = {
-      contents,
-      generationConfig:{
-        temperature,
-        topP: top_p,
-        presencePenalty: presence_penalty,
-        frequencyPenalty: frequency_penalty
-      }
+    state.params = {
+      temperature: +pTemp.value,
+      top_p: +pTopP.value,
+      frequency_penalty: +pFreq.value,
+      presence_penalty: +pPres.value
     };
-    // systemInstruction (if any)
-    const sys = systemPromptWithEngineered();
-    if(sys) body.systemInstruction = { role:'system', parts:[{text: sys}] };
+    localStorage.setItem('params', JSON.stringify(state.params));
+    toast('저장되었습니다.');
+  });
 
-    const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key='+encodeURIComponent(apiKey);
-    const res = await fetch(endpoint, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(body)
-    });
-    const data = await res.json();
-    if(!res.ok) throw new Error((data.error && data.error.message) || 'Gemini 오류');
-    const txt = data.candidates?.[0]?.content?.parts?.map(p=>p.text).join('') || '';
-    return txt.trim();
+  // Prompt Engineering
+  const peRole = $('#pe-role'), peFormat = $('#pe-format'), peOne = $('#pe-one'), peFew = $('#pe-few'), peMust = $('#pe-must'), peBan = $('#pe-ban'), peLen = $('#pe-len');
+  function syncPEtoUI(){
+    peRole.value = state.pe.role || '';
+    peFormat.value = state.pe.format || '목록';
+    peOne.value = state.pe.one || '';
+    peFew.value = state.pe.few || '';
+    peMust.value = state.pe.must || '';
+    peBan.value = state.pe.ban || '';
+    peLen.value = state.pe.len || '';
   }
-}
-
-/* --------------------
-   Tokenization & Embeddings
----------------------*/
-function simpleTokenize(text){
-  // Split by whitespace and punctuation, keep Korean, English, numbers as units
-  // Also split punctuation as single tokens
-  const tokens = text
-    .replace(/[\n\r]+/g,' ')
-    .trim()
-    .match(/[\p{L}\p{N}]+|[^\s\p{L}\p{N}]/gu) || [];
-  // remove pure spaces
-  return tokens.filter(t=>t.trim().length>0);
-}
-
-function syncSourceFromChat(){
-  if(state.lastUserMessage){
-    $('#sourceText').value = state.lastUserMessage;
+  function readPEfromUI(){
+    state.pe = { role: peRole.value.trim(), format: peFormat.value, one: peOne.value.trim(), few: peFew.value.trim(), must: peMust.value.trim(), ban: peBan.value.trim(), len: peLen.value.trim() };
   }
-}
+  syncPEtoUI();
+  $('#savePrompt').addEventListener('click', ()=>{ readPEfromUI(); localStorage.setItem('pe', JSON.stringify(state.pe)); toast('저장되었습니다.'); });
+  $('#previewPrompt').addEventListener('click', ()=>{
+    readPEfromUI();
+    const composed = composePrompt(state.pe);
+    $('#modalContent').textContent = composed;
+    openModal(true);
+  });
 
-$('#analyzeBtn').addEventListener('click', analyzeTokensAndEmbeddings);
+  // Toggle right panel
+  toggleLLM.addEventListener('click', ()=>{
+    const hidden = rightPanel.classList.toggle('hidden');
+    leftPanel.classList.toggle('centered', hidden);
+  });
 
-async function analyzeTokensAndEmbeddings(){
-  const text = $('#sourceText').value.trim();
-  if(!text){ toast('왼쪽 채팅에 메시지를 먼저 입력하세요.'); return; }
+  // Chat actions
+  sendBtn.addEventListener('click', ()=> sendChat());
+  chatInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendChat(); } });
 
-  const tokens = simpleTokenize(text);
-  $('#tokenList').innerHTML = tokens.map(t=>`<span class="token">${escapeHtml(t)}</span>`).join('');
-  $('#totalTokens').textContent = String(tokens.length);
-  $('#origText').textContent = text;
-
-  // Fetch embeddings
-  $('#embeddingResults').innerHTML = '임베딩 계산 중…';
-  try{
-    const embeddings = await getEmbeddingsForTokens(tokens);
-    let dim = embeddings[0]?.length || '-';
-    $('#vectorDim').textContent = String(dim);
-
-    const html = tokens.map((t,i)=>{
-      const vec = embeddings[i] || [];
-      const preview = JSON.stringify(vec);
-      return `<details><summary>${escapeHtml(t)}</summary><pre>${preview}</pre></details>`;
-    }).join('');
-    $('#embeddingResults').innerHTML = html || '임베딩 결과가 없습니다.';
-  }catch(e){
-    console.error(e);
-    $('#embeddingResults').innerHTML = `<span style="color:#b91c1c;">오류: ${escapeHtml(e.message || String(e))}</span>`;
+  function appendMsg(role, text){
+    const el = document.createElement('div');
+    el.className = 'msg ' + (role==='user'?'user':'ai');
+    el.textContent = text;
+    chatEl.appendChild(el);
+    chatEl.scrollTop = chatEl.scrollHeight;
   }
-}
 
-async function getEmbeddingsForTokens(tokens){
-  const {llm, apiKey} = state.settings;
-  if(!apiKey) throw new Error('설정 탭에서 API Key를 입력해 주세요.');
+  async function sendChat(){
+    const text = chatInput.value.trim();
+    if(!text) return;
+    appendMsg('user', text);
+    state.lastUserText = text;
+    chatInput.value = '';
 
-  if(llm==='openai'){
-    // One request with multiple inputs (faster)
-    const res = await fetch('https://api.openai.com/v1/embeddings', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
-      body: JSON.stringify({
-        model: 'text-embedding-3-small',
-        input: tokens
-      })
-    });
-    const data = await res.json();
-    if(!res.ok) throw new Error((data.error && data.error.message) || 'OpenAI 임베딩 오류');
-    return data.data.map(d=>d.embedding);
-  }else{
-    // Gemini: per-token request (embedContent endpoint)
-    const out = [];
-    for(const t of tokens){
-      const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key='+encodeURIComponent(apiKey), {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          content:{ parts:[{text: t}] }
-        })
-      });
-      const data = await res.json();
-      if(!res.ok) throw new Error((data.error && data.error.message) || 'Gemini 임베딩 오류');
-      out.push(data.embedding?.value || []);
+    appendMsg('ai', '생각 중... ');
+    const thinkingEl = chatEl.lastElementChild;
+    try{
+      const reply = await callLLM(text);
+      thinkingEl.textContent = reply || '(응답 없음)';
+    }catch(err){
+      thinkingEl.textContent = '오류: ' + (err?.message || err);
     }
-    return out;
   }
-}
 
-/* --------------------
-   Prompt Engineering
----------------------*/
-function buildPrompt(){
-  const p = state.prompt;
-  const blocks = [];
-  if(p.role) blocks.push(`역할: ${p.role}`);
-  if(p.audience) blocks.push(`대상: ${p.audience}`);
-  if(p.format) blocks.push(`출력 형식: ${p.format}`);
-  if(p.mustInclude) blocks.push(`반드시 포함: ${p.mustInclude}`);
-  if(p.forbid) blocks.push(`금지: ${p.forbid}`);
-  if(p.maxLen) blocks.push(`출력 길이 제한: ${p.maxLen}`);
+  async function callLLM(userText){
+    if(state.provider==='openai'){
+      if(!state.openaiKey) throw new Error('OpenAI API Key가 필요합니다.');
+      const body = {
+        model: 'gpt-4o-mini',
+        messages: [
+          ...(state.systemPrompt? [{ role:'system', content: state.systemPrompt }] : []),
+          { role:'user', content: userText }
+        ],
+        temperature: state.params.temperature,
+        top_p: state.params.top_p,
+        frequency_penalty: state.params.frequency_penalty,
+        presence_penalty: state.params.presence_penalty
+      };
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+state.openaiKey },
+        body: JSON.stringify(body)
+      });
+      if(!res.ok){
+        const t = await res.text();
+        throw new Error('OpenAI 응답 오류: ' + t);
+      }
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content?.trim();
+    }else{
+      if(!state.geminiKey) throw new Error('Gemini API Key가 필요합니다.');
+      const body = {
+        contents: [
+          ...(state.systemPrompt? [{ role:'user', parts:[{text: '시스템 지시사항:\n'+state.systemPrompt}] }] : []),
+          { role:'user', parts:[{text: userText}] }
+        ],
+        generationConfig: {
+          temperature: state.params.temperature,
+          topP: state.params.top_p
+        }
+      };
+      const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key='+encodeURIComponent(state.geminiKey);
+      const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      if(!res.ok){
+        const t = await res.text();
+        throw new Error('Gemini 응답 오류: ' + t);
+      }
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('').trim();
+      return text;
+    }
+  }
 
-  if(p.oneShot) blocks.push(`예시(One-shot):\n${p.oneShot}`);
-  if(p.fewShot) blocks.push(`예시(Few-shot):\n${p.fewShot}`);
+  // Tokenization (approx) and Embedding
+  const tokenBox = $('#tokenBox'), embedBox = $('#embedBox'), mTokens = $('#mTokens'), mDim = $('#mDim'), mSource = $('#mSource');
 
-  return blocks.join('\n\n');
-}
+  function simpleTokenizer(str){
+    // Fallback tokenizer using Intl.Segmenter + punctuation split
+    if(!str) return [];
+    const seg = ('Segmenter' in Intl) ? new Intl.Segmenter('ko', { granularity:'word' }) : null;
+    const words = seg ? Array.from(seg.segment(str)).map(s => s.segment) : str.split(/\s+/g);
+    const tokens = [];
+    for(const w of words){
+      if(!w.trim()) continue;
+      const parts = w.split(/([.,!?;:"'(){}\[\]<>/\\\-_=+*^%$#@`~|…])/g).filter(Boolean);
+      tokens.push(...parts.filter(p=>p.trim()!==''));
+    }
+    return tokens;
+  }
 
-function systemPromptWithEngineered(){
-  const sys = state.settings.systemPrompt?.trim();
-  const engineered = buildPrompt().trim();
-  if(sys && engineered) return `${sys}\n\n[프롬프트 지침]\n${engineered}`;
-  return sys || engineered || '';
-}
+  async function refreshTokenAndEmbedding(){
+    const text = state.lastUserText || '';
+    mSource.textContent = text || '-';
+    if(!text){
+      tokenBox.textContent = '아직 분석할 문장이 없습니다. 먼저 왼쪽에서 메시지를 입력해 주세요.';
+      embedBox.textContent = '토큰을 분석한 뒤 여기에 표시됩니다.';
+      mTokens.textContent = '0'; mDim.textContent = '-';
+      return;
+    }
+    const tokens = simpleTokenizer(text);
+    mTokens.textContent = String(tokens.length);
+    tokenBox.textContent = tokens.map((t,i)=>`${i+1}. ${JSON.stringify(t)}`).join('\n');
 
-/* --------------------
-   Helpers
----------------------*/
-function escapeHtml(str){
-  return str.replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
-}
+    // Embedding per token (batch, limit 50)
+    const first50 = tokens.slice(0,50);
+    embedBox.textContent = '임베딩 계산 중... ';
+    try{
+      let vectors = [];
+      if(state.provider==='openai'){
+        if(!state.openaiKey) throw new Error('OpenAI API Key가 필요합니다.');
+        const body = { model:'text-embedding-3-small', input: first50 };
+        const res = await fetch('https://api.openai.com/v1/embeddings', {
+          method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+state.openaiKey }, body: JSON.stringify(body)
+        });
+        if(!res.ok){
+          const t = await res.text(); throw new Error('OpenAI 임베딩 오류: ' + t);
+        }
+        const data = await res.json();
+        vectors = (data.data||[]).map(d=>d.embedding);
+      }else{
+        if(!state.geminiKey) throw new Error('Gemini API Key가 필요합니다.');
+        const url = 'https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:batchEmbedContents?key='+encodeURIComponent(state.geminiKey);
+        const body = {
+          requests: first50.map(t=>({ content: { parts:[{ text: t }] } }))
+        };
+        const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        if(!res.ok){ const t = await res.text(); throw new Error('Gemini 임베딩 오류: ' + t); }
+        const data = await res.json();
+        vectors = (data.embeddings||[]).map(e=>e.values);
+      }
+      const dim = vectors?.[0]?.length || '-';
+      mDim.textContent = String(dim);
+      const lines = [];
+      first50.forEach((tok,i)=>{
+        const v = vectors[i] || [];
+        lines.push(`${i+1}. "${tok}" → [${v.slice(0,12).map(n=>Number(n).toFixed(4)).join(', ')}${v.length>12?' …':''}] (dim=${v.length})`);
+      });
+      embedBox.textContent = lines.join('\n');
+    }catch(err){
+      embedBox.textContent = '오류: ' + (err?.message || err);
+      mDim.textContent = '-';
+    }
+  }
 
+  // Utilities
+  function toast(msg){
+    const t = $('#toast'); t.textContent = msg; t.style.display='block'; setTimeout(()=> t.style.display='none', 1600);
+  }
+  function openModal(open){
+    $('#modal').style.display = open?'flex':'none';
+  }
+  $('#closeModal').addEventListener('click', ()=> openModal(false));
+  $('#modal').addEventListener('click', (e)=>{ if(e.target.id==='modal') openModal(false) });
+
+  function composePrompt(pe){
+    const blocks = [];
+    if(pe.role) blocks.push(`[역할/대상]\n${pe.role}`);
+    if(pe.format) blocks.push(`[형식]\n출력 형식: ${pe.format}`);
+    if(pe.one) blocks.push(`[One-shot 예시]\n${pe.one}`);
+    if(pe.few) blocks.push(`[Few-shot 예시]\n${pe.few}`);
+    const conds = [];
+    if(pe.must) conds.push(`반드시 포함: ${pe.must}`);
+    if(pe.ban) conds.push(`금지: ${pe.ban}`);
+    if(pe.len) conds.push(`출력 길이: ${pe.len}`);
+    if(conds.length) blocks.push(`[조건]\n${conds.join('\n')}`);
+    blocks.push(`[지침]\n- 명확하고 간결하게 작성하세요.\n- 모르는 정보는 추측하지 말고 부족한 점을 먼저 알리세요.`);
+    return blocks.join('\n\n');
+  }
+
+  // Welcome tip
+  appendMsg('ai', '안녕하세요! 오른쪽 “설정”에서 LLM과 키를 설정한 뒤, 아래 입력창에 메시지를 보내 보세요.');
+
+  // Accessibility: focus on input
+  setTimeout(()=> chatInput.focus(), 300);
 </script>
 </body>
 </html>
