@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -7,8 +6,9 @@
     <title>나는 어떤 AI 능력자일까? LLM 활용 능력 테스트</title>
     <style>
         /* 기본 스타일링 */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
         body {
-            font-family: 'Pretendard', sans-serif;
+            font-family: 'Noto Sans KR', sans-serif;
             background-color: #f0f4f8;
             color: #333;
             margin: 0;
@@ -23,16 +23,21 @@
             max-width: 500px;
             background-color: #fff;
             border-radius: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px D20px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             text-align: center;
         }
         .screen {
             padding: 30px;
             display: none; /* 기본적으로 모든 화면 숨김 */
+            animation: fadeIn 0.5s;
         }
         .screen.active {
             display: block; /* 활성화된 화면만 보이기 */
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         /* 버튼 스타일 */
@@ -48,6 +53,7 @@
             transition: background-color 0.3s, transform 0.2s;
             width: 100%;
             margin-top: 10px;
+            box-sizing: border-box;
         }
         button:hover {
             background-color: #357abd;
@@ -57,9 +63,17 @@
             background-color: #f0f0f0;
             color: #555;
         }
+        button.secondary:hover {
+             background-color: #e0e0e0;
+        }
         button:disabled {
             background-color: #ccc;
             cursor: not-allowed;
+            transform: none;
+        }
+        .answer-btn.selected {
+            background-color: #357abd;
+            border: 2px solid #2a659f;
         }
 
         /* 헤드라인 및 텍스트 */
@@ -75,22 +89,27 @@
         }
 
         /* 진행 바 */
+        .progress-container {
+            margin-bottom: 20px;
+        }
         .progress-bar {
             width: 100%;
             background-color: #e0e0e0;
             border-radius: 10px;
-            margin-bottom: 20px;
+            overflow: hidden;
         }
         .progress {
-            width: 20%; /* 예시, JS로 동적 변경 */
+            width: 0%; 
             height: 10px;
             background-color: #4a90e2;
             border-radius: 10px;
+            transition: width 0.3s;
         }
         .progress-text {
             font-size: 14px;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
             color: #777;
+            font-weight: bold;
         }
 
         /* 질문 및 선택지 */
@@ -98,7 +117,7 @@
             background-color: #f9f9f9;
             padding: 20px;
             border-radius: 15px;
-            margin-bottom: 20px;
+            margin: 20px 0;
             min-height: 100px;
             display: flex;
             justify-content: center;
@@ -114,14 +133,14 @@
             display: flex;
             justify-content: space-between;
             margin-top: 20px;
+            gap: 10px;
         }
         .nav-buttons button {
-            width: 48%;
+            width: 100%;
             font-size: 14px;
             padding: 10px;
         }
-        .nav-buttons button.home {
-            width: 100%;
+        .nav-buttons .home-btn {
             margin-top: 10px;
             background-color: #ddd;
         }
@@ -135,7 +154,7 @@
 
         /* 결과 화면 */
         .result-card {
-            background-color: #4a90e2;
+            background: linear-gradient(135deg, #4a90e2, #63c8f2);
             color: white;
             padding: 20px;
             border-radius: 15px;
@@ -174,8 +193,10 @@
             background-color: #e6f0fa;
             padding: 10px;
             border-radius: 5px;
-            font-family: monospace;
+            font-family: 'Noto Sans KR', monospace;
             font-size: 14px;
+            white-space: pre-wrap;
+            word-break: keep-all;
         }
         .partner-section span {
             display: inline-block;
@@ -183,6 +204,7 @@
             border-radius: 15px;
             margin-right: 5px;
             font-size: 14px;
+            font-weight: bold;
         }
         .partner-section .best {
             background-color: #ffdddd;
@@ -192,15 +214,16 @@
             background-color: #dff0d8;
             color: #5cb85c;
         }
+        .share-buttons button {
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
 
-        <!-- ====================================================== -->
         <!-- 화면 1: 시작 화면 -->
-        <!-- ====================================================== -->
         <div id="start-screen" class="screen active">
             <h1>나는 어떤 AI 능력자일까?<br>LLM 활용 능력 테스트</h1>
             <p>
@@ -210,96 +233,71 @@
             <button id="start-btn">테스트 시작하기</button>
         </div>
 
-        <!-- ====================================================== -->
         <!-- 화면 2: 진단 화면 -->
-        <!-- ====================================================== -->
         <div id="diagnosis-screen" class="screen">
-            <div class="progress-text"><span id="current-q">1</span> / 13</div>
-            <div class="progress-bar">
-                <div class="progress" id="progress"></div>
+            <div class="progress-container">
+                <div class="progress-text"><span id="current-q">1</span> / 13</div>
+                <div class="progress-bar">
+                    <div class="progress" id="progress"></div>
+                </div>
             </div>
-
             <div class="question-box">
-                <p class="question-text" id="question-text">
-                    학교에서 '미래 도시'에 대한 보고서를 쓸 때, LLM에게 어떻게 질문할까?
-                </p>
+                <p class="question-text" id="question-text"></p>
             </div>
-
             <div class="answer-buttons">
-                <button class="answer-btn" data-type="I">"미래 도시에 대해 알려줘."</button>
-                <button class="answer-btn" data-type="S">"초등학생 수준에 맞춰, 미래 도시의 특징 3가지를 교통, 환경, 주거로 나누어 설명해줘."</button>
+                <button class="answer-btn" id="answer-a"></button>
+                <button class="answer-btn" id="answer-b"></button>
             </div>
-
             <div class="nav-buttons">
                 <button id="prev-btn" class="secondary">이전 문항</button>
-                <button id="next-btn" disabled>다음 문항</button>
-                <button id="home-btn" class="secondary home">처음으로</button>
+                <button id="home-btn" class="secondary home-btn">처음으로</button>
             </div>
         </div>
 
-        <!-- ====================================================== -->
-        <!-- 화면 3: 결과 분석 중 화면 (선택 사항) -->
-        <!-- ====================================================== -->
+        <!-- 화면 3: 결과 분석 중 화면 -->
         <div id="loading-screen" class="screen">
             <div class="loading-animation">
                 결과를 분석 중입니다...
                 <p>나의 AI 잠재력은 과연?!</p>
-                <!-- 여기에 스피너나 로딩 애니메이션 추가 -->
             </div>
         </div>
 
-        <!-- ====================================================== -->
         <!-- 화면 4: 결과 리포트 화면 -->
-        <!-- ====================================================== -->
         <div id="result-screen" class="screen">
-            <!-- 유형 카드 -->
             <div class="result-card">
-                <div class="icon">✨</div>
-                <h2 id="result-type-name">자유로운 AI 모험가</h2>
-                <p id="result-summary">호기심을 무기로 AI의 무한한 가능성을 탐험하는 낙관적인 탐험가!</p>
+                <div class="icon" id="result-icon">✨</div>
+                <h2 id="result-type-name"></h2>
+                <p id="result-summary"></p>
             </div>
 
-            <!-- 나의 AI 활용 스타일 분석 -->
             <div class="result-section">
                 <h3>나의 AI 활용 스타일 분석</h3>
-                <p><strong>강점:</strong> <span id="strength-text">새로운 아이디어를 빠르게 시도하고, 예상치 못한 결과에서 재미를 찾아요.</span></p>
-                <p><strong>주의할 점:</strong> <span id="weakness-text">가끔은 계획 없이 진행해서, 중요한 디테일을 놓칠 수 있어요.</span></p>
+                <p><strong>강점:</strong> <span id="strength-text"></span></p>
+                <p><strong>주의할 점:</strong> <span id="weakness-text"></span></p>
             </div>
 
-            <!-- 추천 학습 활동 -->
             <div class="result-section">
                 <h3>성장을 위한 추천 학습 활동 🚀</h3>
-                <ul>
-                    <li id="step1"><strong>1단계 (입문):</strong> "AI와 친구되기: 생활 속 LLM 활용 사례 10가지 살펴보기"</li>
-                    <li id="step2"><strong>2단계 (실습):</strong> "나만의 AI 캐릭터 만들기: ChatGPT로 소설 주인공과 대화하기"</li>
-                    <li id="step3"><strong>3단계 (윤리):</strong> "AI가 만든 정보, 어디까지 믿어야 할까? 팩트체크 방법 배우기"</li>
-                </ul>
+                <ul id="learning-steps"></ul>
             </div>
 
-            <!-- 당장 써먹는 한 줄 프롬프트 템플릿 -->
             <div class="result-section">
                 <h3>당장 써먹는 한 줄 프롬프트 템플릿 📝</h3>
-                <ul>
-                    <li><p class="prompt-template">내가 [주제]에 대한 유튜브 영상을 만들려고 해. 재치 있는 인트로 멘트 5개만 추천해줘.</p></li>
-                    <li><p class="prompt-template">[주인공]이 [장소]에서 [사건]을 겪는 내용으로, 한 문단짜리 짧은 이야기를 만들어줘.</p></li>
-                    <li><p class="prompt-template">만약 사과가 말을 할 수 있다면, 뉴턴의 만유인력 법칙에 대해 어떻게 생각할까? 사과의 입장에서 이야기해줘.</p></li>
-                </ul>
+                <ul id="prompt-templates"></ul>
             </div>
 
-            <!-- 나와 잘 맞는 프롬프트 유형 -->
             <div class="result-section partner-section">
-                <h3>나와 잘 맞는 프롬프트 유형</h3>
+                <h3>나와 잘 맞는 유형</h3>
                 <p>
-                    <strong>환상의 짝꿍 💖:</strong> <span id="best-partner" class="best">체계적인 AI 탐험가</span>
-                    <br> 당신의 아이디어를 현실로 만들어 줄 최고의 파트너!
+                    <strong>환상의 짝꿍 💖:</strong> <span id="best-partner" class="best"></span>
+                    <br><span id="best-partner-desc"></span>
                 </p>
                 <p>
-                    <strong>도움이 되는 친구 👍:</strong> <span id="good-partner" class="good">현실적인 문제 해결사</span>
-                    <br> 당신이 놓치는 부분을 꼼꼼하게 챙겨줄 든든한 친구!
+                    <strong>도움이 되는 친구 👍:</strong> <span id="good-partner" class="good"></span>
+                    <br><span id="good-partner-desc"></span>
                 </p>
             </div>
             
-            <!-- 공유 및 저장 기능 -->
             <div class="share-buttons">
                 <button id="download-btn">결과 이미지 다운로드</button>
                 <button id="kakao-share-btn">카카오톡으로 공유하기</button>
@@ -309,68 +307,249 @@
 
     </div>
 
-    <!-- ====================================================== -->
-    <!-- JavaScript 영역 (기능 구현을 위한 가이드) -->
-    <!-- ====================================================== -->
     <script>
-        // 이 부분에 JavaScript 로직을 추가하여 테스트를 동적으로 만듭니다.
-
-        // ------------------------------------------------------
-        // 1. 필요한 HTML 요소들을 변수에 할당
-        // ------------------------------------------------------
-        const startScreen = document.getElementById('start-screen');
-        const diagnosisScreen = document.getElementById('diagnosis-screen');
-        const loadingScreen = document.getElementById('loading-screen');
-        const resultScreen = document.getElementById('result-screen');
-
+        // DOM 요소 가져오기
+        const screens = {
+            start: document.getElementById('start-screen'),
+            diagnosis: document.getElementById('diagnosis-screen'),
+            loading: document.getElementById('loading-screen'),
+            result: document.getElementById('result-screen')
+        };
         const startBtn = document.getElementById('start-btn');
         const prevBtn = document.getElementById('prev-btn');
-        const nextBtn = document.getElementById('next-btn');
         const homeBtn = document.getElementById('home-btn');
+        const answerABtn = document.getElementById('answer-a');
+        const answerBBtn = document.getElementById('answer-b');
 
-        // ------------------------------------------------------
-        // 2. 문항 데이터 정의
-        // ------------------------------------------------------
+        // 문항 데이터
         const questions = [
-            // 여기에 13개의 질문 객체를 배열로 정의합니다.
-            // 예: { q: '질문 내용', a: [ {text: '답변1', type: 'I'}, {text: '답변2', type: 'S'} ] },
+            { q: "학교에서 '미래 도시'에 대한 보고서를 쓸 때, LLM에게 어떻게 질문할까?", a: [{ text: "'미래 도시에 대해 알려줘.'", type: "I" }, { text: "'초등학생 수준에 맞춰, 미래 도시의 특징 3가지를 교통, 환경, 주거로 나눠 설명해줘.'", type: "S" }] },
+            { q: "LLM이 그림을 그려준다고 할 때, 나는?", a: [{ text: "일단 아무거나 그려달라고 하고, 결과물을 보면서 아이디어를 발전시킨다.", type: "E" }, { text: "내가 원하는 그림이 나올 때까지, 사용법을 꼼꼼히 읽어보고 명령어를 입력한다.", type: "S" }] },
+            { q: "LLM이 처음 보는 신기한 기능을 내놓았다면?", a: [{ text: "'우와, 재밌겠다!' 일단 이것저것 눌러보며 실험해본다.", type: "O" }, { text: "'이거 써도 안전한 걸까?' 다른 사람들의 후기나 안전 관련 정보를 먼저 찾아본다.", type: "C" }] },
+            { q: "새로운 AI 기술에 대한 설명이 있다면?", a: [{ text: "그래서 이걸로 뭘 할 수 있는지 실제 사용 예시가 더 궁금하다.", type: "A" }, { text: "어떤 원리로 작동하는지 기초 개념부터 알고 싶다.", type: "C" }] },
+            { q: "LLM에게 요리 레시피를 물어볼 때, 나는?", a: [{ text: "'김치찌개 맛있게 끓이는 법 알려줘.'", type: "I" }, { text: "'2인분 기준, 김치찌개 재료와 10단계 조리법을 표로 정리해줘.'", type: "S" }] },
+            { q: "아직 테스트 중인 LLM의 '베타 기능'을 발견했다면?", a: [{ text: "재미있어 보인다! 바로 사용해 본다.", type: "E" }, { text: "오류가 있을 수 있으니, 다른 사람들이 쓸 때까지 기다린다.", type: "S" }] },
+            { q: "LLM이 알려준 정보가 진짜인지 의심스러울 때, 나는?", a: [{ text: "그럴 수도 있지! 재미로 넘기거나 다른 질문을 한다.", type: "O" }, { text: "다른 검색 사이트나 책을 통해 꼭 확인(팩트체크)한다.", type: "C" }] },
+            { q: "LLM이 가끔 그럴듯한 거짓말을 하는 현상을 뭐라고 부를까?", a: [{ text: "환각 (Hallucination)", type: "C" }, { text: "오류 (Error)", type: "A" }] },
+            { q: "LLM으로 동화책 이야기를 만들 때, 나의 역할은?", a: [{ text: "멋진 아이디어를 던져주고, AI가 이야기를 마음껏 만들게 한다.", type: "I" }, { text: "주인공 성격, 배경, 사건 순서를 정해주고 AI가 살을 붙이게 한다.", type: "S" }] },
+            { q: "LLM에게 게임 공략법을 물어봤는데, 자꾸 엉뚱한 답을 한다면?", a: [{ text: "이 AI는 잘 모르나 보다. 내가 직접 방법을 찾아본다.", type: "S" }, { text: "질문을 바꿔보고, 다른 힌트를 주면서 원하는 답을 얻어내려고 시도한다.", type: "E" }] },
+            { q: "학교 숙제를 할 때 LLM을 어떻게 활용하고 싶은가?", a: [{ text: "아이디어를 얻거나, 어려운 내용을 쉽게 풀어서 설명해달라고 한다.", type: "O" }, { text: "내가 쓴 글의 맞춤법을 검사하거나, 자료를 요약하는 데 주로 사용한다.", type: "C" }] },
+            { q: "LLM에게 질문할 때, 한 번에 기억할 수 있는 대화의 양(단어)을 무엇이라고 할까?", a: [{ text: "토큰 (Token)", type: "C" }, { text: "쿠키 (Cookie)", type: "A" }] },
+            { q: "AI 기술을 배울 때 나의 마음가짐은?", a: [{ text: "'그래서 이걸로 뭘 할 수 있는데?' 실제 사용 사례가 더 궁금하다.", type: "A" }, { text: "'원리와 개념부터 차근차근!' 기초를 이해하는 게 중요하다.", type: "C" }] }
         ];
 
-        // ------------------------------------------------------
-        // 3. 진단 로직 함수 정의
-        // ------------------------------------------------------
+        // 결과 데이터
+        const results = {
+            "CSSC": { type: "꼼꼼한 원리원칙주의자", icon: "🧐", summary: "기초부터 탄탄히! AI의 원리를 파고드는 신중한 학습자", strength: "AI의 작동 원리를 깊이 이해하려 하며, 정보를 비판적으로 수용하여 정확성을 중요하게 생각해요.", weakness: "새로운 기능을 시도하기 전에 너무 오래 고민하여, 변화의 속도를 놓칠 수 있어요.", best: "창의적인 AI 건축가", good: "스마트한 AI 솔루셔니스트" },
+            "CSSO": { type: "믿음직한 AI 교과서", icon: "📘", summary: "정확한 지식을 바탕으로 AI의 긍정적인 면을 탐구하는 학자", strength: "AI에 대한 깊은 이론적 지식을 바탕으로, 기술을 긍정적으로 활용할 방법을 찾아요.", weakness: "가끔은 이론에 치우쳐, 실제적인 활용 아이디어를 내는 데 어려움을 겪을 수 있어요.", best: "과감한 AI 프로토타이퍼", good: "재치있는 AI 플레이메이커" },
+            "CSIC": { type: "신중한 AI 감각가", icon: "🤔", summary: "직관과 원리를 결합하여 AI를 조심스럽게 탐색하는 분석가", strength: "자신의 직감을 따르면서도, AI가 내놓은 결과의 원리를 되짚어보며 신중하게 판단해요.", weakness: "결정을 내리기까지 시간이 오래 걸리고, 복잡한 명령어 사용을 꺼려할 수 있어요.", best: "자유로운 AI 모험가", good: "통찰력 있는 AI 비평가" },
+            "CSIO": { type: "친절한 AI 튜터", icon: "🧑‍🏫", summary: "AI의 기초를 쉽고 재미있게 알려주는 긍정적인 안내자", strength: "복잡한 AI 개념을 친구들이 이해하기 쉽게 설명해주며, 새로운 기술을 배우는 것을 즐겨요.", weakness: "기술의 한계나 위험성보다는 밝은 면을 더 강조하는 경향이 있어요.", best: "세상을 바꾸는 AI 비저너리", good: "과감한 AI 프로토타이퍼" },
+            "CESC": { type: "체계적인 AI 탐험가", icon: "🧭", summary: "새로운 AI 세계를 지도 그리듯 질서 있게 탐험하는 전략가", strength: "새로운 기능이 나오면 체계적으로 실험하며, 자신만의 활용법을 만들어내는 것을 잘해요.", weakness: "실험 과정에서 발생할 수 있는 위험을 너무 경계하여, 과감한 시도를 주저할 수 있어요.", best: "재치있는 AI 플레이메이커", good: "자유로운 AI 모험가" },
+            "CESO": { type: "창의적인 AI 건축가", icon: "🏰", summary: "AI라는 도구로 상상 속의 세계를 만들어내는 긍정적인 창작자", strength: "AI의 새로운 기능을 활용하여 기존에 없던 창의적인 결과물을 만들어내는 데 능숙해요.", weakness: "디테일한 계획보다는 큰 그림을 보는 것을 선호해, 마무리 작업이 부족할 수 있어요.", best: "꼼꼼한 원리원칙주의자", good: "현실적인 문제 해결사" },
+            "CEIC": { type: "조심스러운 AI 예술가", icon: "🎨", summary: "영감을 AI로 표현하지만, 그 결과물을 비판적으로 바라보는 창작자", strength: "AI를 활용해 독창적인 아이디어를 탐색하면서도, AI의 창작물이 갖는 한계를 명확히 인식해요.", weakness: "자신의 아이디어를 AI로 구현하는 과정에서, 기술적 제약이나 윤리적 문제에 부딪혀 좌절할 수 있어요.", best: "현실적인 문제 해결사", good: "스마트한 AI 솔루셔니스트" },
+            "CEIO": { type: "자유로운 AI 모험가", icon: "✨", summary: "호기심을 무기로 AI의 무한한 가능성을 탐험하는 낙관적인 탐험가!", strength: "새로운 아이디어를 빠르게 시도하고, 예상치 못한 결과에서 재미를 찾아요.", weakness: "가끔은 계획 없이 진행해서, 중요한 디테일을 놓칠 수 있어요.", best: "신중한 AI 감각가", good: "체계적인 AI 탐험가" },
+            "ASSC": { type: "현실적인 문제 해결사", icon: "🛠️", summary: "AI를 실제 문제 해결에 적용하는 안정적이고 신중한 실용주의자", strength: "검증된 AI 기능을 사용하여, 생활 속 불편함을 해결하는 구체적인 방법을 찾아내요.", weakness: "너무 현실적인 문제에만 집중하여, AI의 창의적이거나 실험적인 잠재력을 놓칠 수 있어요.", best: "조심스러운 AI 예술가", good: "창의적인 AI 건축가" },
+            "ASSO": { type: "스마트한 AI 솔루셔니스트", icon: "💡", summary: "AI로 삶을 더 편리하게 만드는 효율적인 방법을 찾아내는 해결사", strength: "반복적인 작업을 AI로 자동화하거나, 복잡한 정보를 요약하는 등 효율성을 높이는 데 AI를 잘 활용해요.", weakness: "AI의 편리함에 너무 의존하여, 스스로 생각하는 능력이 약해질 수 있음을 경계해야 해요.", best: "믿음직한 AI 교과서", good: "꼼꼼한 원리원칙주의자" },
+            "ASIC": { type: "노련한 AI 조련사", icon: "🦾", summary: "AI의 특성을 파악하고, 원하는 결과를 얻기 위해 신중하게 길들이는 전문가", strength: "AI가 내놓는 답변의 패턴을 파악하고, 직관적인 질문으로 AI를 원하는 방향으로 유도해요.", weakness: "자신이 아는 방법만 고수하여, 더 새롭고 효율적인 AI 활용법을 배우는 데 소홀할 수 있어요.", best: "치밀한 AI 전략가", good: "세상을 바꾸는 AI 비저너리" },
+            "ASIO": { type: "재치있는 AI 플레이메이커", icon: "🎯", summary: "AI와 티키타카하며, 즐겁고 유쾌한 결과물을 만들어내는 아이디어 뱅크", strength: "AI와 친구처럼 대화하며, 예상치 못한 재미있는 답변을 이끌어내는 능력이 탁월해요.", weakness: "재미 위주로 AI를 활용하다 보니, 학습이나 업무 효율을 높이는 데에는 잘 사용하지 않을 수 있어요.", best: "체계적인 AI 탐험가", good: "믿음직한 AI 교과서" },
+            "AESC": { type: "치밀한 AI 전략가", icon: "♟️", summary: "AI의 새로운 가능성을 탐색하며, 위험까지 계산하는 날카로운 분석가", strength: "새로운 AI 기술을 활용하여 목표를 달성하기 위한 치밀한 계획을 세우고, 잠재적 위험까지 관리해요.", weakness: "계획을 세우는 데 너무 많은 시간을 써서, 정작 실행에 옮기지 못할 때가 있어요.", best: "노련한 AI 조련사", good: "통찰력 있는 AI 비평가" },
+            "AESO": { type: "과감한 AI 프로토타이퍼", icon: "🚀", summary: "아이디어가 떠오르면 AI로 빠르게 시제품을 만들어보는 대담한 실행가", strength: "AI를 이용해 자신의 아이디어를 빠르게 현실화하고, 실패를 두려워하지 않아요.", weakness: "빠른 실행에 집중한 나머지, 결과물의 완성도나 안정성이 부족할 수 있어요.", best: "믿음직한 AI 교과서", good: "친절한 AI 튜터" },
+            "AEIC": { type: "통찰력 있는 AI 비평가", icon: "🔍", summary: "AI의 화려함 이면의 사회적, 윤리적 의미를 꿰뚫어 보는 비평가", strength: "AI 기술이 우리 사회에 미칠 영향을 깊이 있게 고민하고, 날카로운 통찰력을 제시해요.", weakness: "비판적인 시각이 강해, AI 기술 자체를 배우거나 활용하는 데에는 소극적일 수 있어요.", best: "신중한 AI 감각가", good: "치밀한 AI 전략가" },
+            "AEIO": { type: "세상을 바꾸는 AI 비저너리", icon: "🌍", summary: "AI 기술로 더 나은 미래를 상상하고, 사람들에게 영감을 주는 선구자", strength: "AI의 무한한 가능성을 믿고, 사회의 긍정적인 변화를 이끌기 위한 담대한 비전을 제시해요.", weakness: "아이디어가 너무 거대하여, 구체적인 실현 계획이 부족할 수 있어요.", best: "친절한 AI 튜터", good: "노련한 AI 조련사" }
+        };
+
+        // 상태 변수
+        let currentQuestionIndex = 0;
+        let userAnswers = [];
+
+        // 함수: 화면 전환
+        function showScreen(screenId) {
+            Object.values(screens).forEach(screen => screen.classList.remove('active'));
+            screens[screenId].classList.add('active');
+        }
+
+        // 함수: 질문 렌더링
+        function renderQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                const q = questions[currentQuestionIndex];
+                document.getElementById('current-q').textContent = currentQuestionIndex + 1;
+                document.getElementById('progress').style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
+                document.getElementById('question-text').textContent = q.q;
+                answerABtn.textContent = q.a[0].text;
+                answerABtn.dataset.type = q.a[0].type;
+                answerBBtn.textContent = q.a[1].text;
+                answerBBtn.dataset.type = q.a[1].type;
+                
+                // 이전 답변이 있으면 버튼 스타일 업데이트
+                answerABtn.classList.remove('selected');
+                answerBBtn.classList.remove('selected');
+                if(userAnswers[currentQuestionIndex]) {
+                    if(userAnswers[currentQuestionIndex] === q.a[0].type) answerABtn.classList.add('selected');
+                    else answerBBtn.classList.add('selected');
+                }
+
+                prevBtn.disabled = currentQuestionIndex === 0;
+            } else {
+                showResult();
+            }
+        }
+
+        // 함수: 답변 선택
+        function selectAnswer(e) {
+            userAnswers[currentQuestionIndex] = e.target.dataset.type;
+            
+            // 시각적 피드백
+            document.querySelectorAll('.answer-btn').forEach(btn => btn.classList.remove('selected'));
+            e.target.classList.add('selected');
+
+            // 0.5초 후 다음 질문으로 자동 이동
+            setTimeout(() => {
+                currentQuestionIndex++;
+                renderQuestion();
+            }, 500);
+        }
+
+        // 함수: 이전 질문
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        }
         
-        // `startBtn` 클릭 시:
-        // - startScreen을 숨기고 diagnosisScreen을 표시합니다.
-        // - 첫 번째 질문을 화면에 렌더링합니다.
+        // 함수: 처음으로
+        function resetTest() {
+             currentQuestionIndex = 0;
+             userAnswers = [];
+             showScreen('start');
+        }
 
-        // `answer-btn` 클릭 시:
-        // - 선택된 답변의 유형(data-type)을 저장합니다.
-        // - nextBtn을 활성화합니다.
-        // - (선택사항) 바로 다음 질문으로 넘어갑니다.
+        // 함수: 결과 계산 및 표시
+        function showResult() {
+            showScreen('loading');
 
-        // `nextBtn` 클릭 시:
-        // - 다음 질문을 화면에 렌더링합니다.
-        // - 마지막 질문일 경우, loadingScreen을 표시하고 결과 계산 함수를 호출합니다.
+            setTimeout(() => {
+                const scores = { C: 0, A: 0, S: 0, E: 0, I: 0, O: 0 };
+                // S, C가 중복되므로 진단 축별로 분리해서 계산
+                const dimensionScores = {
+                    'CA': {'C': 0, 'A': 0}, // Concept/Application
+                    'SE': {'S': 0, 'E': 0}, // Stable/Exploratory
+                    'SI': {'S': 0, 'I': 0}, // Structured/Intuitive
+                    'CO': {'C': 0, 'O': 0}  // Cautious/Optimistic
+                };
+                
+                const typeMap = {
+                    'C': 'CA', 'A': 'CA',
+                    'S': ['SE', 'SI'], // S는 두 축에 걸쳐 있음
+                    'E': 'SE',
+                    'I': 'SI',
+                    'O': 'CO'
+                };
 
-        // `prevBtn` 클릭 시:
-        // - 이전 질문으로 돌아갑니다.
+                // 각 질문의 답변 유형에 따라 점수 부여
+                questions.forEach((q, index) => {
+                    const answerType = userAnswers[index];
+                    if(!answerType) return;
 
-        // `homeBtn` 클릭 시:
-        // - 모든 진행 상황을 초기화하고 startScreen을 표시합니다.
+                    if(answerType === 'S') { // Structured vs Stable 구분
+                        if (index === 0 || index === 4 || index === 8) { // Structured/Intuitive 문항
+                            dimensionScores['SI']['S']++;
+                        } else { // Stable/Exploratory 문항
+                            dimensionScores['SE']['S']++;
+                        }
+                    } else if (answerType === 'C') { // Concept vs Cautious 구분
+                        if (index === 3 || index === 7 || index === 11 || index === 12) { // Concept/Application 문항
+                            dimensionScores['CA']['C']++;
+                        } else { // Cautious/Optimistic 문항
+                            dimensionScores['CO']['C']++;
+                        }
+                    } else if (answerType === 'A') {
+                        dimensionScores['CA']['A']++;
+                    } else if (answerType === 'E') {
+                        dimensionScores['SE']['E']++;
+                    } else if (answerType === 'I') {
+                        dimensionScores['SI']['I']++;
+                    } else if (answerType === 'O') {
+                        dimensionScores['CO']['O']++;
+                    }
+                });
 
-        // 결과 계산 함수:
-        // - 저장된 답변 유형들을 바탕으로 4가지 진단 축(C/A, S/E, S/I, C/O)의 점수를 계산합니다.
-        // - 최종 유형을 결정합니다. (예: CEIO)
-        // - loadingScreen을 숨기고 resultScreen을 표시합니다.
-        // - 결정된 유형에 맞는 텍스트와 이미지로 결과 페이지 내용을 업데이트합니다.
+                let resultType = "";
+                resultType += dimensionScores.CA.C >= dimensionScores.CA.A ? 'C' : 'A';
+                resultType += dimensionScores.SE.S >= dimensionScores.SE.E ? 'S' : 'E';
+                resultType += dimensionScores.SI.S >= dimensionScores.SI.I ? 'S' : 'I';
+                resultType += dimensionScores.CO.C >= dimensionScores.CO.O ? 'C' : 'O';
+                
+                renderResult(resultType);
+                showScreen('result');
 
-        // 공유 및 다운로드 함수:
-        // - `download-btn` 클릭 시: canvas API를 사용해 결과 카드를 이미지로 생성하고 다운로드합니다.
-        // - `kakao-share-btn` 클릭 시: 카카오 SDK를 사용하여 공유 기능을 구현합니다.
-        // - `copy-link-btn` 클릭 시: 현재 페이지 URL을 클립보드에 복사합니다.
+            }, 2000); // 2초 로딩
+        }
 
-        console.log("LLM 자가진단 UI가 준비되었습니다. JavaScript로 기능을 구현해주세요.");
+        // 함수: 결과 데이터 화면에 렌더링
+        function renderResult(type) {
+            const data = results[type];
+            if (!data) {
+                console.error("결과를 찾을 수 없습니다:", type);
+                // 기본값 또는 오류 메시지 표시
+                document.getElementById('result-type-name').textContent = "결과를 분석할 수 없어요 😥";
+                return;
+            }
+
+            document.getElementById('result-icon').textContent = data.icon;
+            document.getElementById('result-type-name').textContent = data.type;
+            document.getElementById('result-summary').textContent = data.summary;
+            document.getElementById('strength-text').textContent = data.strength;
+            document.getElementById('weakness-text').textContent = data.weakness;
+            
+            document.getElementById('best-partner').textContent = data.best;
+            document.getElementById('good-partner').textContent = data.good;
+            
+            // 파트너 설명 추가
+            const bestPartnerKey = Object.keys(results).find(key => results[key].type === data.best);
+            const goodPartnerKey = Object.keys(results).find(key => results[key].type === data.good);
+            document.getElementById('best-partner-desc').textContent = bestPartnerKey ? results[bestPartnerKey].summary : '';
+            document.getElementById('good-partner-desc').textContent = goodPartnerKey ? results[goodPartnerKey].summary : '';
+
+            const stepsUl = document.getElementById('learning-steps');
+            stepsUl.innerHTML = `
+                <li><strong>1단계 (입문):</strong> "AI와 친구되기: 생활 속 LLM 활용 사례 10가지 살펴보기"</li>
+                <li><strong>2단계 (실습):</strong> "나만의 AI 캐릭터 만들기: ChatGPT로 소설 주인공과 대화하기"</li>
+                <li><strong>3단계 (윤리):</strong> "AI가 만든 정보, 어디까지 믿어야 할까? 팩트체크 방법 배우기"</li>
+            `;
+
+            const promptsUl = document.getElementById('prompt-templates');
+            promptsUl.innerHTML = `
+                <li><p class="prompt-template">내가 [주제]에 대한 유튜브 영상을 만들려고 해. 재치 있는 인트로 멘트 5개만 추천해줘.</p></li>
+                <li><p class="prompt-template">[주인공]이 [장소]에서 [사건]을 겪는 내용으로, 한 문단짜리 짧은 이야기를 만들어줘.</p></li>
+                <li><p class="prompt-template">만약 사과가 말을 할 수 있다면, 뉴턴의 만유인력 법칙에 대해 어떻게 생각할까? 사과의 입장에서 이야기해줘.</p></li>
+            `;
+        }
+
+        // 이벤트 리스너 설정
+        startBtn.addEventListener('click', () => {
+            resetTest();
+            showScreen('diagnosis');
+            renderQuestion();
+        });
+        
+        answerABtn.addEventListener('click', selectAnswer);
+        answerBBtn.addEventListener('click', selectAnswer);
+        prevBtn.addEventListener('click', prevQuestion);
+        homeBtn.addEventListener('click', resetTest);
+        
+        // 공유 및 다운로드 버튼 (기능은 구현되지 않음, 안내 메시지)
+        document.getElementById('download-btn').addEventListener('click', () => {
+            alert('결과 이미지 다운로드 기능은 구현 준비 중입니다. 화면을 캡처하여 친구들에게 공유해보세요!');
+        });
+        document.getElementById('kakao-share-btn').addEventListener('click', () => {
+            alert('카카오톡 공유 기능은 구현 준비 중입니다.');
+        });
+        document.getElementById('copy-link-btn').addEventListener('click', () => {
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                alert('링크가 클립보드에 복사되었습니다!');
+            });
+        });
 
     </script>
 </body>
