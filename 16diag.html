@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 활용 유형 진단</title>
+    <style>
+        /* Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
+        /* CSS Reset & Basic Styles */
+        :root {
+            --primary-color: #4285F4; /* Google Blue */
+            --light-gray: #F8F9FA;
+            --medium-gray: #E0E0E0;
+            --dark-gray: #757575;
+            --text-color: #212121;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --border-radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--light-gray);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Main Container */
+        .container {
+            width: 100%;
+            max-width: 500px; /* 콘텐츠 영역 최대 너비 */
+            background-color: #FFFFFF;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            transition: all 0.3s ease-in-out;
+        }
+        
+        /* Screen Base */
+        .screen {
+            display: none;
+            padding: 40px 30px;
+            animation: fadeIn 0.5s;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Common Elements */
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--dark-gray);
+        }
+
+        .main-btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            margin-top: 32px;
+            border: none;
+            background-color: var(--primary-color);
+            color: #FFFFFF;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        
+        .main-btn:hover {
+            background-color: #3367D6;
+            transform: translateY(-2px);
+        }
+        
+        .main-btn:disabled {
+            background-color: var(--medium-gray);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+
+        /* 1. Start Screen */
+        #start-screen {
+            text-align: center;
+        }
+
+        #start-screen img {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            margin: 24px 0;
+            border-radius: var(--border-radius);
+        }
+        
+        #start-screen .intro-text {
+            margin-top: 16px;
+        }
+        
+
+        /* 2. Question Screen */
+        #question-screen .progress-bar-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 20px;
+            margin-bottom: 24px;
+            height: 12px;
+            position: relative;
+        }
+
+        #question-screen .progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 20px;
+            transition: width 0.3s ease-in-out;
+        }
+        
+        #question-screen .progress-text {
+            position: absolute;
+            right: 12px;
+            top: -24px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--dark-gray);
+        }
+
+        #question-screen .question-text {
+            font-size: 20px;
+            font-weight: 500;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .answer-btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 2px solid var(--medium-gray);
+            background-color: #FFFFFF;
+            color: var(--text-color);
+            font-size: 16px;
+            text-align: left;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .answer-btn:hover {
+            border-color: var(--primary-color);
+            background-color: #f0f4ff;
+        }
+        
+        .answer-btn.selected {
+            border-color: var(--primary-color);
+            background-color: var(--primary-color);
+            color: #FFFFFF;
+            font-weight: 500;
+        }
+        
+        .navigation-btns {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 32px;
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            border: none;
+            background-color: transparent;
+            color: var(--dark-gray);
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .nav-btn:hover {
+            background-color: #f1f3f4;
+        }
+        
+        #next-btn {
+            background-color: var(--primary-color);
+            color: #FFFFFF;
+        }
+        
+        #next-btn:disabled {
+             background-color: var(--medium-gray);
+        }
+        
+        
+        /* 3. Loading Screen (optional but good for UX) */
+        #loading-screen {
+             text-align: center;
+        }
+        .loader {
+            border: 6px solid var(--light-gray);
+            border-top: 6px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 40px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 4. Result Screen */
+        .result-card {
+            background-color: #FFFFFF;
+            padding: 24px;
+            border: 1px solid var(--medium-gray);
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+        }
+        
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .result-header img {
+            width: 60px;
+            height: 60px;
+        }
+        
+        .result-header .type-info h2 {
+            font-size: 22px;
+            margin: 0;
+            font-weight: 700;
+        }
+        
+        .result-header .type-info p {
+            font-size: 14px;
+            color: var(--dark-gray);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .result-section {
+            margin-top: 24px;
+        }
+        
+        .result-section h3 {
+            font-size: 16px;
+            font-weight: 700;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .result-section ul {
+            list-style-type: none;
+        }
+        .result-section ul li {
+            background-color: var(--light-gray);
+            padding: 12px;
+            border-radius: var(--border-radius);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .result-section p > strong {
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .share-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+        }
+        
+        .share-btn {
+            flex-grow: 1;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid var(--medium-gray);
+            background-color: #fff;
+            color: var(--text-color);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .share-btn:hover {
+            background-color: var(--light-gray);
+        }
+
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Screen 1: Start Screen -->
+        <div id="start-screen" class="screen active">
+            <h1>나는 어떤 AI 능력자일까?<br>AI 챗봇 활용 능력 진단</h1>
+            <img src="https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/0.%20start.png" alt="AI 챗봇 활용 능력 진단 대표 이미지">
+            <p class="intro-text">몇 가지 질문에 답하고 나의 AI 잠재력을 확인해보세요! 나의 AI 챗봇 활용 스타일과 딱 맞는 활동 꿀팁까지 알려드려요.</p>
+            <button id="start-btn" class="main-btn">진단 시작하기</button>
+        </div>
+
+        <!-- Screen 2: Question Screen -->
+        <div id="question-screen" class="screen">
+            <span id="progress-text" class="progress-text"></span>
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+            <p id="question-text" class="question-text"></p>
+            <div class="answer-options">
+                <button id="answer-a" class="answer-btn"></button>
+                <button id="answer-b" class="answer-btn"></button>
+            </div>
+            <div class="navigation-btns">
+                 <button id="prev-btn" class="nav-btn">이전 문항</button>
+                 <button id="restart-btn-quiz" class="nav-btn">처음으로</button>
+                 <button id="next-btn" class="nav-btn" disabled>다음 문항</button>
+            </div>
+        </div>
+        
+        <!-- Screen 3: Loading Screen -->
+        <div id="loading-screen" class="screen">
+            <h1>결과를 분석하고 있어요...</h1>
+            <div class="loader"></div>
+            <p>당신의 AI 잠재력을 찾는 중입니다!</p>
+        </div>
+
+        <!-- Screen 4: Result Screen -->
+        <div id="result-screen" class="screen">
+             <!-- 결과 내용이 동적으로 채워질 영역 -->
+            <div id="result-content"></div>
+
+            <div class="share-btns">
+                <button class="share-btn">결과 이미지 다운로드</button>
+                <button class="share-btn">카카오톡으로 공유하기</button>
+                <button class="share-btn">링크 복사하기</button>
+            </div>
+            <button id="restart-btn-result" class="main-btn">진단 다시하기</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- 데이터베이스 ---
+
+            const questions = [
+                {
+                    question: "학교에서 '미래 도시'에 대한 보고서를 쓸 때, AI 챗봇에게 어떻게 질문할까?",
+                    answers: {
+                        A: { text: "'미래 도시에 대해 알려줘.'", type: 'I' },
+                        B: { text: "'초등학생 수준에 맞춰, 미래 도시의 특징 3가지를 교통, 환경, 주거로 나누어 설명해줘.'", type: 'S' }
+                    },
+                    axis: 'SI'
+                },
+                {
+                    question: "AI 챗봇이 그림을 그려준다고 할 때, 나는?",
+                    answers: {
+                        A: { text: "일단 아무거나 그려달라고 하고, 결과물을 보면서 아이디어를 발전시킨다.", type: 'E' },
+                        B: { text: "내가 원하는 그림이 나올 때까지, 사용법을 꼼꼼히 읽어보고 명령어를 입력한다.", type: 'S' }
+                    },
+                    axis: 'SE'
+                },
+                {
+                    question: "AI 챗봇이 처음 보는 신기한 기능을 내놓았다면?",
+                    answers: {
+                        A: { text: "'우와, 재밌겠다!' 일단 이것저것 눌러보며 실험해본다.", type: 'O' },
+                        B: { text: "'이거 써도 안전한 걸까?' 다른 사람들의 후기나 안전 관련 정보를 먼저 찾아본다.", type: 'C' }
+                    },
+                    axis: 'CO'
+                },
+                {
+                    question: "새로운 AI 기술을 배울 때 나의 마음가짐은?",
+                    answers: {
+                        A: { text: "원리와 개념부터 차근차근 이해하는 게 중요해.", type: 'C' },
+                        B: { text: "그래서 이걸로 뭘 할 수 있는데? 실제 사용 사례가 더 궁금해.", type: 'A' }
+                    },
+                    axis: 'CA'
+                },
+                {
+                    question: "AI 챗봇이 내가 전혀 모르는 주제에 대해 어려운 단어를 써서 설명할 때, 나는?",
+                    answers: {
+                        A: { text: "일단 계속 읽어보며 전체적인 흐름을 파악하려고 노력한다.", type: 'I' },
+                        B: { text: "'쉬운 말로 다시 설명해줄래?'라고 추가로 요청한다.", type: 'S' }
+                    },
+                    axis: 'SI'
+                },
+                {
+                    question: "팀 프로젝트에서 AI로 자료 조사를 해야 할 때, 나는?",
+                    answers: {
+                        A: { text: "다양한 키워드를 넣어보며 예상치 못한 정보를 찾는 재미를 즐긴다.", type: 'E' },
+                        B: { text: "꼭 필요한 정보가 무엇인지 목록을 만들고, 정확한 질문을 통해 답을 찾는다.", type: 'S' }
+                    },
+                    axis: 'SE'
+                },
+                {
+                    question: "AI가 내 숙제를 대신해줄 수 있다는 사실을 알게 되었다면?",
+                    answers: {
+                        A: { text: "와! 잘 활용하면 공부 시간을 아낄 수 있겠다!", type: 'O' },
+                        B: { text: "혹시 내가 스스로 생각하는 힘을 잃게 되는 건 아닐까?", type: 'C' }
+                    },
+                    axis: 'CO'
+                },
+                {
+                    question: "내가 쓴 글을 AI가 더 멋지게 다듬어 준다고 한다. 어떤 방식이 더 좋아?",
+                    answers: {
+                        A: { text: "어떤 결과가 나올지 모르니, 일단 AI에게 맡겨본다.", type: 'A' },
+                        B: { text: "AI가 왜 이렇게 바꿨는지, 원리를 이해하고 싶다.", type: 'C' }
+                    },
+                    axis: 'CA'
+                },
+                {
+                    question: "AI 챗봇에게 질문할 때, 한 번에 기억할 수 있는 대화의 양을 무엇이라고 할까?",
+                    answers: {
+                        A: { text: "토큰", type: 'C' },
+                        B: { text: "쿠키", type: 'A' }
+                    },
+                    axis: 'CA'
+                },
+                {
+                    question: "AI 챗봇이 가끔 그럴듯한 거짓말을 하는 현상을 뭐라고 부를까?",
+                    answers: {
+                        A: { text: "환각", type: 'C' },
+                        B: { text: "오류", type: 'A' }
+                    },
+                    axis: 'CA'
+                },
+                 {
+                    question: "친구가 만든 AI 그림을 보고 '나도 해볼래!'라는 생각이 들었을 때, 먼저 하는 행동은?",
+                    answers: {
+                        A: { text: "친구에게 무슨 프로그램을 썼는지 물어보고 바로 시도해본다.", type: 'E' },
+                        B: { text: "AI 그림 그리기에 대한 유튜브 영상을 먼저 찾아보며 사용법을 익힌다.", type: 'S' }
+                    },
+                    axis: 'SE'
+                },
+                {
+                    question: "AI 챗봇과 대화하다가 이상한 답변을 받았다. 이때 나의 생각은?",
+                    answers: {
+                        A: { text: "AI도 완벽하지 않구나! 재미있는 경험이네!", type: 'O' },
+                        B: { text: "잘못된 정보가 퍼지면 위험할 수 있겠다.", type: 'C' }
+                    },
+                    axis: 'CO'
+                }
+            ];
+
+            const results = {
+                "CSSC": {
+                    title: "꼼꼼한 원리원칙주의자",
+                    icon: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-1.png",
+                    summary: "AI의 작동 원리를 정확히 이해하고, 계획에 따라 실수를 최소화하는 AI 학습자!",
+                    analysis: {
+                        strength: "원리와 개념을 차근차근 이해하는 것을 중요하게 생각해요. 계획을 세우고 규칙에 따라 AI를 활용하여 가장 정확한 결과를 얻어내는 데 강점이 있어요.",
+                        weakness: "새로운 시도나 예상치 못한 변화에 조금 당황할 수 있어요. 가끔은 계획에서 벗어나 AI와 함께 자유롭게 상상해보는 것도 즐거운 경험이 될 거예요."
+                    },
+                    activities: [
+                        "<strong>1단계 (입문):</strong> \"AI 챗봇의 '기억력'은 어디까지? - 토큰(Token)의 개념과 역할 알아보기\"",
+                        "<strong>2단계 (실습):</strong> \"나만의 'AI 사용 설명서' 만들기: 자주 쓰는 AI 도구의 기능과 명령어 목록 정리하기\"",
+                        "<strong>3단계 (윤리):</strong> \"AI는 어떻게 편견을 가질까? - 학습 데이터의 중요성과 공정성 문제 토론하기\""
+                    ],
+                    prompts: [
+                        "<strong>정의 요청:</strong> '머신러닝'의 정의를 초등학생 수준에 맞춰 3가지 핵심 특징으로 나누어 설명해줘.",
+                        "<strong>단계별 지시:</strong> 맛있는 떡볶이를 만드는 방법을 1단계부터 5단계까지 순서대로 알려줘.",
+                        "<strong>정보 비교:</strong> 강아지와 고양이의 차이점을 외모, 습성, 특징 3가지 기준으로 표를 만들어 비교해줘."
+                    ],
+                    partners: {
+                        good: "<strong>환상의 짝꿍: 세상을 바꾸는 AI 비저너리 (AEIO)</strong> - 당신의 꼼꼼함과 원리 이해가 비저너리의 대담한 아이디어를 현실로 만들어 줄 거예요!",
+                        helpful: "<strong>도움이 되는 친구: 스마트한 AI 솔루셔니스트 (ASSO)</strong> - 당신과 같이 체계적이지만, 결과를 빠르게 만들어내는 방법을 알려줄 수 있어요."
+                    }
+                }
+                // ... 나머지 15개 유형 데이터 추가 ...
+                // 편의상 1개 유형만 우선 등록합니다. 모든 유형을 추가하려면 이 구조에 맞춰 데이터를 입력하면 됩니다.
+                // 실제 서비스에서는 모든 16개 유형의 데이터를 여기에 추가해야 합니다.
+            };
+            
+             const typeNames = {
+                CSSC: '꼼꼼한 원리원칙주의자', CSSO: '믿음직한 AI 교과서', CSIC: '신중한 AI 감각가', CSIO: '친절한 AI 튜터',
+                CESC: '체계적인 AI 탐험가', CESO: '창의적인 AI 건축가', CEIC: '조심스러운 AI 예술가', CEIO: '자유로운 AI 모험가',
+                ASSC: '현실적인 문제 해결사', ASSO: '스마트한 AI 솔루셔니스트', ASIC: '노련한 AI 조련사', ASIO: '재치있는 AI 플레이메이커',
+                AESC: '치밀한 AI 전략가', AESO: '과감한 AI 프로토타이퍼', AEIC: '통찰력 있는 AI 비평가', AEIO: '세상을 바꾸는 AI 비저너리'
+            };
+
+            // --- DOM 요소 ---
+            const screens = document.querySelectorAll('.screen');
+            const startBtn = document.getElementById('start-btn');
+            const questionText = document.getElementById('question-text');
+            const answerABtn = document.getElementById('answer-a');
+            const answerBBtn = document.getElementById('answer-b');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const restartBtnQuiz = document.getElementById('restart-btn-quiz');
+            const restartBtnResult = document.getElementById('restart-btn-result');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const resultContent = document.getElementById('result-content');
+
+            // --- 상태 변수 ---
+            let currentQuestionIndex = 0;
+            let userAnswers = {};
+
+            // --- 함수 ---
+            
+            function showScreen(screenId) {
+                screens.forEach(screen => {
+                    screen.classList.remove('active');
+                });
+                document.getElementById(screenId).classList.add('active');
+            }
+
+            function resetQuiz() {
+                currentQuestionIndex = 0;
+                userAnswers = {};
+                showScreen('start-screen');
+            }
+
+            function startQuiz() {
+                currentQuestionIndex = 0;
+                userAnswers = {};
+                showScreen('question-screen');
+                renderQuestion();
+            }
+
+            function renderQuestion() {
+                if (currentQuestionIndex < 0 || currentQuestionIndex >= questions.length) {
+                    return;
+                }
+
+                const question = questions[currentQuestionIndex];
+                questionText.textContent = question.question;
+                answerABtn.textContent = question.answers.A.text;
+                answerBBtn.textContent = question.answers.B.text;
+
+                // 선택 상태 업데이트
+                answerABtn.classList.remove('selected');
+                answerBBtn.classList.remove('selected');
+                if (userAnswers[currentQuestionIndex]) {
+                    if (userAnswers[currentQuestionIndex] === 'A') {
+                        answerABtn.classList.add('selected');
+                    } else {
+                        answerBBtn.classList.add('selected');
+                    }
+                }
+                
+                // 버튼 상태 업데이트
+                nextBtn.disabled = !userAnswers[currentQuestionIndex];
+                prevBtn.style.visibility = (currentQuestionIndex === 0) ? 'hidden' : 'visible';
+
+                // 진행 상태 바 업데이트
+                const progressPercentage = ((currentQuestionIndex) / questions.length) * 100;
+                progressBar.style.width = `${progressPercentage}%`;
+                progressText.textContent = `${currentQuestionIndex + 1}/${questions.length}`;
+            }
+
+            function selectAnswer(choice) {
+                userAnswers[currentQuestionIndex] = choice;
+                renderQuestion();
+            }
+
+            function nextQuestion() {
+                if (currentQuestionIndex < questions.length - 1) {
+                    currentQuestionIndex++;
+                    renderQuestion();
+                } else {
+                    calculateResult();
+                }
+            }
+            
+            function prevQuestion() {
+                if (currentQuestionIndex > 0) {
+                    currentQuestionIndex--;
+                    renderQuestion();
+                }
+            }
+
+            function calculateResult() {
+                showScreen('loading-screen');
+
+                const scores = { CA: 0, SE: 0, SI: 0, CO: 0 };
+                
+                for(let i=0; i<questions.length; i++) {
+                    const question = questions[i];
+                    const answerChoice = userAnswers[i];
+                    if(!answerChoice) continue;
+                    
+                    const type = question.answers[answerChoice].type;
+                    const axis = question.axis;
+
+                    if (axis === 'CA') {
+                        if (type === 'C') scores.CA++; else scores.CA--;
+                    } else if (axis === 'SE') {
+                        if (type === 'S') scores.SE++; else scores.SE--;
+                    } else if (axis === 'SI') {
+                        if (type === 'S') scores.SI++; else scores.SI--;
+                    } else if (axis === 'CO') {
+                        if (type === 'C') scores.CO++; else scores.CO--;
+                    }
+                }
+
+                let finalType = "";
+                finalType += (scores.CA >= 0) ? 'C' : 'A';
+                finalType += (scores.SE >= 0) ? 'S' : 'E';
+                finalType += (scores.SI >= 0) ? 'S' : 'I';
+                finalType += (scores.CO >= 0) ? 'C' : 'O';
+
+                setTimeout(() => {
+                    renderResult(finalType);
+                }, 1500); // 1.5초 로딩 애니메이션 보여주기
+            }
+
+            function renderResult(type) {
+                // 'CSSC' 외 유형은 임시 데이터로 표시
+                let resultData = results[type];
+                if (!resultData) {
+                    resultData = {
+                        title: typeNames[type] || "분석되지 않은 유형",
+                        icon: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-1.png",
+                        summary: "이 유형에 대한 자세한 정보가 아직 준비되지 않았습니다.",
+                        analysis: { strength: "준비 중", weakness: "준비 중" },
+                        activities: ["준비 중"],
+                        prompts: ["준비 중"],
+                        partners: { good: "준비 중", helpful: "준비 중" }
+                    };
+                }
+
+                resultContent.innerHTML = `
+                    <div class="result-card">
+                        <div class="result-header">
+                            <img src="${resultData.icon}" alt="${resultData.title} 아이콘">
+                            <div class="type-info">
+                                <h2>${resultData.title}</h2>
+                                <p>${resultData.summary}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-section">
+                            <h3>나의 AI 활용 스타일 분석</h3>
+                            <p><strong>강점:</strong> ${resultData.analysis.strength}</p>
+                            <p><strong>주의할 점:</strong> ${resultData.analysis.weakness}</p>
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-section">
+                            <h3>추천 학습 활동 (3단계)</h3>
+                            <ul>
+                                ${resultData.activities.map(activity => `<li>${activity}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                         <div class="result-section">
+                            <h3>당장 써먹는 한 줄 프롬프트 템플릿</h3>
+                             <ul>
+                                ${resultData.prompts.map(prompt => `<li>${prompt}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                         <div class="result-section">
+                            <h3>나와 잘 맞는 프롬프트 유형</h3>
+                            <p>${resultData.partners.good}</p>
+                            <p>${resultData.partners.helpful}</p>
+                        </div>
+                    </div>
+                `;
+                showScreen('result-screen');
+            }
+
+            // --- 이벤트 리스너 ---
+            startBtn.addEventListener('click', startQuiz);
+            answerABtn.addEventListener('click', () => selectAnswer('A'));
+            answerBBtn.addEventListener('click', () => selectAnswer('B'));
+            nextBtn.addEventListener('click', nextQuestion);
+            prevBtn.addEventListener('click', prevQuestion);
+            restartBtnQuiz.addEventListener('click', resetQuiz);
+            restartBtnResult.addEventListener('click', resetQuiz);
+        });
+    </script>
+</body>
+</html>
