@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 챗봇 활용 유형</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+        
+        :root {
+            --primary-color: #4285F4;
+            --background-color: #F8F9FA;
+            --card-background-color: #FFFFFF;
+            --text-color: #202124;
+            --secondary-text-color: #5F6368;
+            --border-radius: 8px;
+            --box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 0;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #3367D6;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background-color: var(--card-background-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .card img {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1rem;
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            margin: 0.5rem 0;
+        }
+        
+        .card .eng-name {
+            color: var(--secondary-text-color);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .card p {
+            font-size: 0.9rem;
+            color: var(--secondary-text-color);
+            line-height: 1.5;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: auto;
+            padding: 2.5rem;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 600px;
+            position: relative;
+            max-height: 500px; /* 세로 크기 제한 */
+            overflow-y: auto; /* 내용이 길 경우 스크롤 */
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal h2 {
+            margin-top: 0;
+            font-size: 1.5rem;
+        }
+        
+        .modal .explanation {
+            font-size: 0.95rem;
+            color: var(--secondary-text-color);
+            background-color: var(--background-color);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+        }
+
+        .modal p {
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        
+        .modal hr {
+            border: 0;
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 2rem 0;
+        }
+
+        #detail-view { display: none; }
+        
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .detail-header .btn {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            padding: 0.5rem 1rem;
+        }
+
+        .tabs-container {
+            position: relative;
+        }
+
+        .tabs {
+            display: flex;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
+        }
+
+        .tabs::-webkit-scrollbar {
+            display: none; /* Safari and Chrome */
+        }
+        
+        .tab {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            white-space: nowrap;
+            border-bottom: 3px solid transparent;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .tab-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            text-align: center;
+            line-height: 28px;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        .tab-nav.prev { left: -15px; }
+        .tab-nav.next { right: -15px; }
+
+        .report-content {
+            background: var(--card-background-color);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-top: 1rem;
+        }
+
+        .report-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .report-header img {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 1rem;
+        }
+
+        .report-header h2 {
+            font-size: 1.75rem;
+            margin: 0;
+        }
+        
+        .report-header p {
+            color: var(--secondary-text-color);
+            margin-top: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .report-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .report-section h3 {
+            font-size: 1.25rem;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .analysis-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        
+        .analysis-item {
+            background-color: var(--background-color);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+        }
+
+        .analysis-item h4 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        .learning-steps {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .learning-steps li {
+            background-color: var(--background-color);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .learning-steps .step-number {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            text-align: center;
+            line-height: 24px;
+            margin-right: 1rem;
+            font-weight: bold;
+        }
+
+        .prompt-template {
+            background-color: #E8F0FE;
+            padding: 1rem 1.5rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+        }
+        
+        .prompt-template strong {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .prompt-pairing-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .pairing-item {
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            background-color: var(--background-color);
+        }
+
+        .pairing-item h4 {
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .pairing-item h4 span:first-child {
+            margin-right: 0.5rem;
+        }
+
+        .pairing-item-visionary { border-left: 5px solid #FBC02D; }
+        .pairing-item-solutionist { border-left: 5px solid #4CAF50; }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.5rem; }
+            .btn { padding: 0.5rem 1rem; font-size: 0.9rem;}
+            .analysis-box, .prompt-pairing-box { grid-template-columns: 1fr; }
+            .tab-nav { display: none; }
+            .report-content { padding: 1.5rem; }
+            .detail-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <main id="main-view" class="container">
+        <header>
+            <h1>AI 챗봇 활용 유형</h1>
+            <button class="btn" id="open-modal-btn">AI 챗봇 활용 16가지 유형 이란</button>
+        </header>
+        <div id="card-container" class="card-grid">
+            <!-- Cards will be injected here by JavaScript -->
+        </div>
+    </main>
+
+    <section id="detail-view" class="container">
+        <div class="detail-header">
+            <h1>AI 챗봇 활용 유형</h1>
+            <button class="btn" id="back-to-main-btn">돌아가기</button>
+        </div>
+        <div class="tabs-container">
+            <div class="tab-nav prev" id="tab-prev">&#10094;</div>
+            <div id="tabs-wrapper" class="tabs">
+                <!-- Tabs will be injected here by JavaScript -->
+            </div>
+            <div class="tab-nav next" id="tab-next">&#10095;</div>
+        </div>
+        <div id="report-container">
+            <!-- Report content will be injected here -->
+        </div>
+    </section>
+
+    <div id="info-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>AI 챗봇 활용 16가지 유형</h2>
+            
+            <p><strong>진단 축</strong></p>
+            <p class="explanation">
+                이 네 가지 축은 AI를 어떻게 바라보고 활용하는지를 나타내는 기준입니다. AI의 개념과 원리를 중시하는지(이해), 안정적이고 검증된 방식을 선호하는지(방식), 체계적이고 구조적인 접근을 하는지(스타일), 그리고 AI를 신중하게 또는 낙관적으로 대하는지(인식)에 따라 AI 챗봇 활용 스타일을 알아봅니다.
+            </p>
+            <p>
+                - <strong>이해 (C/A)</strong>: Concept (기초 개념 중심) / Application (응용 사례 중심)<br>
+                - <strong>방식 (S/E)</strong>: Stable (안정형) / Exploratory (탐험형)<br>
+                - <strong>스타일 (S/I)</strong>: Structured (구조형) / Intuitive (직관형)<br>
+                - <strong>인식 (C/O)</strong>: Cautious (신중형) / Optimistic (낙관형)
+            </p>
+            <hr>
+            <p><strong>16가지 결과 유형 네이밍</strong></p>
+            <p class="explanation">
+                위 네 가지 진단 축의 조합에 따라 총 16가지의 독특한 AI 활용 유형이 만들어집니다. 각 유형은 당신이 AI와 상호작용하는 자신만의 방식을 나타내며, 강점을 발전시키고 약점을 보완할 수 있는 맞춤형 가이드를 제공합니다.
+            </p>
+            <p>
+                - <strong>CSSC</strong> (기초-안정-구조-신중): 꼼꼼한 원리원칙주의자<br>
+                - <strong>CSSO</strong> (기초-안정-구조-낙관): 믿음직한 AI 길잡이<br>
+                - <strong>CSIC</strong> (기초-안정-직관-신중): 신중한 AI 감각가<br>
+                - <strong>CSIO</strong> (기초-안정-직관-낙관): 친절한 AI 튜터<br>
+                - <strong>CESC</strong> (기초-탐험-구조-신중): 체계적인 AI 탐험가<br>
+                - <strong>CESO</strong> (기초-탐험-구조-낙관): 창의적인 AI 건축가<br>
+                - <strong>CEIC</strong> (기초-탐험-직관-신중): 조심스러운 AI 예술가<br>
+                - <strong>CEIO</strong> (기초-탐험-직관-낙관): 자유로운 AI 모험가<br>
+                - <strong>ASSC</strong> (응용-안정-구조-신중): 현실적인 문제 해결사<br>
+                - <strong>ASSO</strong> (응용-안정-구조-낙관): 스마트한 AI 솔루셔니스트<br>
+                - <strong>ASIC</strong> (응용-안정-직관-신중): 노련한 AI 조련사<br>
+                - <strong>ASIO</strong> (응용-안정-직관-낙관): 재치있는 AI 플레이메이커<br>
+                - <strong>AESC</strong> (응용-탐험-구조-신중): 치밀한 AI 전략가<br>
+                - <strong>AESO</strong> (응용-탐험-구조-낙관): 과감한 AI 프로토타이퍼<br>
+                - <strong>AEIC</strong> (응용-탐험-직관-신중): 통찰력 있는 AI 비평가<br>
+                - <strong>AEIO</strong> (응용-탐험-직관-낙관): 세상을 바꾸는 AI 비저너리<br>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript 내용은 이전과 동일합니다.
+        const typesData = [
+            {
+                id: 1,
+                engName: "CSSC",
+                typeName: "꼼꼼한 원리원칙주의자",
+                iconUrl: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-1.png",
+                summary: "AI의 작동 원리를 정확히 이해하고, 계획에 따라 실수를 최소화하는 AI 학습자!",
+                analysis: {
+                    strength: "원리와 개념을 차근차근 이해하는 것을 중요하게 생각해요. 계획을 세우고 규칙에 따라 AI를 활용하여 가장 정확한 결과를 얻어내는 데 강점이 있어요.",
+                    caution: "새로운 시도나 예상치 못한 변화에 조금 당황할 수 있어요. 가끔은 계획에서 벗어나 AI와 함께 자유롭게 상상해보는 것도 즐거운 경험이 될 거예요."
+                },
+                learningActivities: [
+                    "\"AI 챗봇의 '기억력'은 어디까지? - 토큰(Token)의 개념과 역할 알아보기\"",
+                    "\"나만의 'AI 사용 설명서' 만들기: 자주 쓰는 AI 도구의 기능과 명령어 목록 정리하기\"",
+                    "\"AI는 어떻게 편견을 가질까? - 학습 데이터의 중요성과 공정성 문제 토론하기\""
+                ],
+                prompts: [
+                    { title: "정의 요청", content: "\"'머신러닝'의 정의를 초등학생 수준에 맞춰 3가지 핵심 특징으로 나누어 설명해줘.\"" },
+                    { title: "단계별 지시", content: "\"맛있는 떡볶이를 만드는 방법을 1단계부터 5단계까지 순서대로 알려줘.\"" },
+                    { title: "정보 비교", content: "\"강아지와 고양이의 차이점을 외모, 습성, 특징 3가지 기준으로 표를 만들어 비교해줘.\"" }
+                ],
+                pairing: {
+                    partner: { name: "세상을 바꾸는 AI 비저너리 (AEIO)", desc: "당신의 꼼꼼함과 원리 이해가 비저너리의 대담한 아이디어를 현실로 만들어 줄 거예요!" },
+                    friend: { name: "스마트한 AI 솔루셔니스트 (ASSO)", desc: "당신과 같이 체계적이지만, 결과를 빠르게 만들어내는 방법을 알려줄 수 있어요." }
+                }
+            },
+            {
+                id: 2,
+                engName: "CSSO",
+                typeName: "믿음직한 AI 길잡이",
+                iconUrl: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-2.png",
+                summary: "정확한 지식을 바탕으로 AI의 긍정적인 힘을 믿고, 차근차근 활용하는 모범생!",
+                analysis: {
+                    strength: "AI 기술의 원리를 이해하고, 이를 통해 세상을 더 좋게 만들 수 있다고 믿어요. 안정적이고 검증된 방법을 사용해 신뢰도 높은 결과를 만들어내는 것을 좋아해요.",
+                    caution: "정해진 규칙이나 가이드를 너무 믿어서, 자신만의 독창적인 활용법을 놓칠 수 있어요. 가끔은 \"이걸로 뭘 더 할 수 있을까?\" 상상해보세요!"
+                },
+                learningActivities: [
+                    "\"AI가 우리를 어떻게 도와줄까? - 교육, 의료, 환경 분야 AI 활용 사례 뉴스 기사 찾아보기\"",
+                    "\"AI와 함께 '우리 동네 안전 지도' 만들기: 위험한 곳과 안전한 곳을 분류하고 이유 설명하기\"",
+                    "\"착한 AI 만들기 프로젝트: 'AI 개발자가 지켜야 할 윤리 규칙 5가지' 직접 만들어보기\""
+                ],
+                prompts: [
+                    { title: "긍정적 활용", content: "\"AI를 활용해서 학교 폭력을 예방할 수 있는 아이디어 3가지를 제안해줘.\"" },
+                    { title: "학습 도우미", content: "\"조선 시대 왕들의 업적을 쉽게 외울 수 있도록 재미있는 노래 가사로 만들어줘.\"" },
+                    { title: "체계적 요약", content: "\"오늘 배운 과학 수업 내용 [주제]에 대해 핵심 내용만 3줄로 요약해줘.\"" }
+                ],
+                pairing: {
+                    partner: { name: "통찰력 있는 AI 비평가 (AEIC)", desc: "당신의 긍정적인 믿음에 비평가의 날카로운 시각이 더해져 더 완벽한 계획을 세울 수 있어요." },
+                    friend: { name: "친절한 AI 튜터 (CSIO)", desc: "당신처럼 원리를 중시하면서도, 더 유연한 소통 방식을 배울 수 있을 거예요." }
+                }
+            },
+            {
+                id: 3,
+                engName: "CSIC",
+                typeName: "신중한 AI 감각가",
+                iconUrl: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-3.png",
+                summary: "AI의 답변 이면에 숨은 의도까지 파악하려 노력하는 조심스러운 원리 탐구가!",
+                analysis: {
+                    strength: "AI의 작동 원리를 이해하면서도, 그 결과가 항상 옳지는 않다는 것을 알고 있어요. 직관적으로 이상한 낌새를 잘 알아채고, 정보를 여러 번 확인하는 신중함을 가졌어요.",
+                    caution: "너무 신중하게 생각하느라 AI를 활용하는 첫걸음을 떼기 어려워할 수 있어요. 때로는 '일단 해보자!'라는 가벼운 마음도 필요해요."
+                },
+                learningActivities: [
+                    "\"AI 챗봇의 거짓말, '환각(Hallucination)' 현상은 왜 일어날까? 원인 알아보기\"",
+                    "\"같은 질문 다르게 하기: 하나의 질문을 3가지 다른 방식으로 물어보고 답변이 어떻게 달라지는지 비교 분석하기\"",
+                    "\"가짜뉴스 감별사 되기: AI가 만든 이미지와 실제 사진을 구별하는 방법 배우고 직접 찾아보기\""
+                ],
+                prompts: [
+                    { title: "의도 파악", content: "\"네가 방금 한 대답은 어떤 데이터를 기반으로 한 거야? 출처를 알려줄 수 있어?\"" },
+                    { title: "정보 확인", content: "\"'거북선은 철갑선이 아니다'라는 주장에 대해 어떻게 생각해? 여러 관점의 자료를 보여줘.\"" },
+                    { title: "직관적 질문", content: "\"지금 내 기분이 어떨 것 같아? 내 말투를 보고 한번 추측해봐.\"" }
+                ],
+                pairing: {
+                    partner: { name: "과감한 AI 프로토타이퍼 (AESO)", desc: "당신의 신중함이 프로토타이퍼의 과감한 실행력에 안정성을 더해줄 거예요." },
+                    friend: { name: "현실적인 문제 해결사 (ASSC)", desc: "당신과 같이 신중하지만, 문제를 해결하는 구체적인 방법을 잘 알고 있어 도움이 될 거예요." }
+                }
+            },
+            {
+                id: 4,
+                engName: "CSIO",
+                typeName: "친절한 AI 튜터",
+                iconUrl: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-4.png",
+                summary: "AI의 원리를 쉽게 풀어 설명해주고, 친구처럼 다정하게 AI를 활용하는 소통의 달인!",
+                analysis: {
+                    strength: "복잡한 AI 개념도 친구들이 이해하기 쉽게 설명하는 재능이 있어요. AI와 대화할 때도 딱딱한 명령보다는 친근한 말투로 소통하며 잠재력을 이끌어내는 것을 즐겨요.",
+                    caution: "가끔은 재미있는 대화에 빠져 원래 하려던 목표를 잊어버릴 수 있어요. AI와 즐겁게 소통하면서도, 내가 원하는 결과물을 얻고 있는지 중간중간 확인해보세요."
+                },
+                learningActivities: [
+                    "\"나만의 AI 챗봇에게 '별명' 지어주기: 페르소나(Persona) 설정하고 역할 부여하기\"",
+                    "\"AI와 함께 '고민 상담소' 열기: 친구들의 고민을 듣고 AI와 함께 따뜻한 조언의 메시지 만들기\"",
+                    "\"AI 챗봇과 나눈 대화는 비밀일까? - 개인정보 보호와 데이터 활용의 경계선 토론하기\""
+                ],
+                prompts: [
+                    { title: "역할 부여", content: "\"너는 지금부터 내 수학 공부를 도와주는 친절한 과외 선생님이야. 이 문제를 단계별로 설명해줘.\"" },
+                    { title: "쉬운 설명", content: "\"양자역학에 대해 아무것도 모르는 10살 아이도 이해할 수 있게 비유를 들어서 설명해줘.\"" },
+                    { title: "감성 대화", content: "\"오늘 학교에서 속상한 일이 있었어. 내 이야기를 들어주고 위로해줄래?\"" }
+                ],
+                pairing: {
+                    partner: { name: "치밀한 AI 전략가 (AESC)", desc: "당신의 뛰어난 소통 능력이 전략가의 치밀한 계획을 실행하는 데 큰 도움이 될 거예요." },
+                    friend: { name: "믿음직한 AI 길잡이 (CSSO)", desc: "당신처럼 원리를 중시하고 긍정적이어서, 함께 깊이 있는 AI 공부를 하기에 좋아요." }
+                }
+            },
+            {
+                id: 5,
+                engName: "CESC",
+                typeName: "체계적인 AI 탐험가",
+                iconUrl: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-5.png",
+                summary: "호기심을 가지고 새로운 AI 세계를 탐험하되, 자신만의 규칙과 지도를 만들어가는 전략가!",
+                analysis: {
+                    strength: "새로운 AI 기술이 나오면 원리를 궁금해하며 직접 써보는 것을 즐겨요. 동시에, 무작정 시도하기보다는 어떤 기능이 있는지, 어떻게 써야 효율적인지 체계적으로 분석하며 자신만의 활용법을 만들어요.",
+                    caution: "새로운 것을 탐험하고 분석하는 데 너무 많은 에너지를 쓴 나머지, 하나의 결과물을 완성하는 데 시간이 오래 걸릴 수 있어요. 때로는 '완벽'보다 '완성'이 중요해요."
+                },
+                learningActivities: [
+                    "\"최신 AI 서비스 3가지 비교 분석하기: 각 서비스의 장점, 단점, 핵심 기능 정리하기\"",
+                    "\"'나만의 만능 프롬프트' 만들기: 어떤 상황에서도 쓸 수 있도록 변수를 활용한 프롬프트 구조 설계하기\"",
+                    "\"AI 기술 발전의 빛과 그림자: 특정 AI 기술(예: 딥페이크)의 순기능과 역기능 동시 조사 및 발표\""
+                ],
+                prompts: [
+                    { title: "구조적 실험", content: "\"내가 [주제]에 대한 글을 쓰려고 해. '서론-본론-결론' 구조에 맞춰 각 부분에 들어갈 핵심 아이디어를 목록으로 만들어줘.\"" },
+                    { title: "기능 테스트", content: "\"너의 '코드 해석' 기능의 한계는 어디까지야? 파이썬, 자바, C++ 코드 중 어떤 것을 가장 잘 분석해?\"" },
+                    { title: "체계적 요청", content: "\"미래의 인공지능 도시를 상상해서 설명해줘. 교통, 환경, 의료, 교육 4가지 분야로 나누어서 구체적인 예시를 들어줘.\"" }
+                ],
+                pairing: {
+                    partner: { name: "재치있는 AI 플레이메이커 (ASIO)", desc: "당신의 체계적인 탐험에 플레이메이커의 재치와 응용력이 더해져 멋진 결과물을 만들 수 있어요." },
+                    friend: { name: "자유로운 AI 모험가 (CEIO)", desc: "당신처럼 탐험을 즐기지만, 더 자유로운 방식으로 접근하여 새로운 영감을 줄 거예요." }
+                }
+            },
+            {
+                id: 6,
+                engName: "CESO",
+                typeName: "창의적인 AI 건축가",
+                iconUrl: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-6.png",
+                summary: "AI의 원리를 블록처럼 활용해, 세상에 없던 새로운 아이디어를 만들어내는 긍정적인 설계자!",
+                analysis: {
+                    strength: "새로운 AI 기술의 가능성에 설레며, 그 원리를 이해하고 조합하여 자신만의 창작물을 만드는 것을 좋아해요. 체계적인 질문을 통해 AI의 능력을 최대한으로 끌어내 멋진 결과물을 설계할 수 있어요.",
+                    caution: "너무 거대한 아이디어를 구상하다가, 현실적인 제약이나 디테일을 놓칠 수 있어요. 큰 그림을 그리면서도, 지금 당장 실현 가능한 작은 단계부터 시작해보세요."
+                },
+                learningActivities: [
+                    "\"AI 챗봇의 '역할 놀이' 마스터하기: 특정 전문가(의사, 변호사, 작가) 역할을 부여하고 문제 해결하기\"",
+                    "\"AI와 함께 '우리 학교 마스코트' 디자인하기: 컨셉 정하기, 특징 묘사, 슬로건 만들기 전 과정 함께하기\"",
+                    "\"창작의 주인은 누구? AI가 그린 그림, AI가 쓴 소설의 저작권은 누구에게 있을까? 토론하기\""
+                ],
+                prompts: [
+                    { title: "아이디어 설계", content: "\"10년 뒤 미래의 학교 모습을 상상해서 '가상현실 수업', 'AI 선생님' 등을 포함한 시나리오를 구체적으로 작성해줘.\"" },
+                    { title: "창의적 조합", content: "\"'사이버펑크' 스타일과 '조선 시대'를 결합한 새로운 세계관의 단편 소설 도입부를 써줘.\"" },
+                    { title: "구조적 창작", content: "\"내가 주인공, 배경, 사건을 알려줄 테니, 이걸 바탕으로 반전이 있는 짧은 웹툰 1화 시나리오를 표 형식으로 만들어줘.\"" }
+                ],
+                pairing: {
+                    partner: { name: "노련한 AI 조련사 (ASIC)", desc: "당신의 창의적인 설계도를 조련사의 노련한 응용력으로 빠르게 현실화할 수 있어요." },
+                    friend: { name: "과감한 AI 프로토타이퍼 (AESO)", desc: "당신처럼 창의적이고 대담한 아이디어를 가지고 있어, 함께 세상을 놀라게 할 프로젝트를 할 수 있어요." }
+                }
+            },
+            {
+                id: 7,
+                engName: "CEIC",
+                typeName: "조심스러운 AI 예술가",
+                iconUrl: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-7.png",
+                summary: "AI의 창의적인 가능성을 탐험하면서도, 그 결과물을 비판적으로 바라보는 섬세한 영혼의 아티스트!",
+                analysis: {
+                    strength: "AI를 활용해 새로운 것을 만드는 것을 즐기면서도, AI가 내 생각과 다른 결과물을 내놓을 때 그 이유를 깊이 파고드는 통찰력이 있어요. 무작정 받아들이기보다, 결과물을 비판적으로 분석하고 더 나은 방향으로 발전시켜요.",
+                    caution: "자신의 창작물이나 AI의 결과물에 대해 너무 엄격한 잣대를 들이댈 수 있어요. 때로는 조금 부족해 보여도 '이것도 재미있네!'라며 가볍게 즐기는 마음을 가져보세요."
+                },
+                learningActivities: [
+                    "\"유명 화가(고흐, 피카소)의 화풍을 흉내 내는 AI 그림 명령어(프롬프트) 찾아보고 따라 해보기\"",
+                    "\"AI가 써준 시(poem) 비평하기: AI가 쓴 시를 읽고, 마음에 드는 부분과 어색한 부분을 찾아 나만의 감상평 남기기\"",
+                    "\"진짜와 가짜의 경계: AI가 만든 예술 작품은 '진정한 예술'이라고 할 수 있을까? 나의 생각 정리하기\""
+                ],
+                prompts: [
+                    { title: "추상적 표현", content: "\"'행복'이라는 감정을 눈으로 볼 수 있는 이미지로 표현해줘. 색감과 구도를 자유롭게 상상해서 설명해줘.\"" },
+                    { title: "비판적 질문", content: "\"방금 네가 생성한 그림에서 어색한 부분은 없어? 스스로 평가하고 수정해볼래?\"" },
+                    { title: "의외의 조합", content: "\"냉장고와 우주선, 이 두 가지를 합쳐서 새로운 발명품에 대한 아이디어 스케치를 글로 묘사해줘.\"" }
+                ],
+                pairing: {
+                    partner: { name: "스마트한 AI 솔루셔니스트 (ASSO)", desc: "당신의 예술적 영감을 솔루셔니스트가 현실적인 문제 해결 능력으로 구체화시켜 줄 거예요." },
+                    friend: { name: "통찰력 있는 AI 비평가 (AEIC)", desc: "당신처럼 비판적인 시각으로 AI를 바라보며, 깊이 있는 토론을 할 수 있는 최고의 파트너예요." }
+                }
+            },
+            {
+                id: 8,
+                engName: "CEIO",
+                typeName: "자유로운 AI 모험가",
+                iconUrl: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-8.png",
+                summary: "호기심을 무기로 AI의 무한한 가능성을 탐험하는 낙관적인 탐험가!",
+                analysis: {
+                    strength: "\"이걸로 뭘 할 수 있을까?\"라는 호기심으로 가득 차 있어요. 새로운 AI 도구가 나오면 일단 써보고, 예상치 못한 결과에서 재미를 찾아요. 실패를 두려워하지 않고 AI의 한계를 테스트하는 것을 즐겨요.",
+                    caution: "가끔은 계획 없이 진행해서, 중요한 디테일을 놓칠 수 있어요. 모험을 떠나기 전에 작은 나침반(목표)이라도 하나 챙기면 더 멋진 보물을 발견할 수 있을 거예요."
+                },
+                learningActivities: [
+                    "\"AI와 끝말잇기, 스무고개 놀이하기: AI의 창의력과 나의 순발력 대결하기\"",
+                    "\"세상에 없는 '나만의 동물' 만들기: 동물 두 가지를 조합해 AI에게 그려달라고 하고, 특징 설명도 부탁하기\"",
+                    "\"AI와 장난치기, 어디까지 괜찮을까? AI 챗봇에게 해서는 안 될 질문과 행동에 대해 토론하기\""
+                ],
+                prompts: [
+                    { title: "아이디어 폭발", content: "\"내가 [주제]에 대한 유튜브 영상을 만들려고 해. 재치 있는 인트로 멘트 5개만 추천해줘.\"" },
+                    { title: "스토리텔링", content: "\"[주인공]이 [장소]에서 [사건]을 겪는 내용으로, 한 문단짜리 짧은 이야기를 만들어줘.\"" },
+                    { title: "관점 전환", content: "\"만약 사과가 말을 할 수 있다면, 뉴턴의 만유인력 법칙에 대해 어떻게 생각할까? 사과의 입장에서 이야기해줘.\"" }
+                ],
+                pairing: {
+                    partner: { name: "꼼꼼한 원리원칙주의자 (CSSC)", desc: "당신의 자유로운 아이디어를 원리원칙주의자가 꼼꼼하게 현실로 구현해 줄 최고의 파트너!" },
+                    friend: { name: "체계적인 AI 탐험가 (CESC)", desc: "당신처럼 새로운 탐험을 즐기면서도, 계획을 세우는 방법을 배울 수 있어요." }
+                }
+            },
+            {
+                id: 9,
+                engName: "ASSC",
+                typeName: "현실적인 문제 해결사",
+                iconUrl: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-9.png",
+                summary: "뜬구름 잡는 이야기보다, 지금 당장 내 숙제를 도와줄 AI 활용법이 더 중요한 실용주의자!",
+                analysis: {
+                    strength: "AI를 '어떻게' 사용하는지에 집중해요. 복잡한 문제 상황에서 필요한 정보를 정확히 질문하고, AI의 답변을 활용해 문제를 해결하는 능력이 뛰어나요. 매우 현실적이고 효율적인 방식으로 AI를 다뤄요.",
+                    caution: "너무 효율과 결과만 중시한 나머지, AI를 활용하는 과정의 즐거움을 놓칠 수 있어요. 가끔은 숙제 말고, AI와 함께 재미있는 이야기를 만들어보는 건 어떨까요?"
+                },
+                learningActivities: [
+                    "\"AI 챗봇으로 '수학 숙제 검사' 받기: 내가 푼 문제의 정답과 풀이 과정을 확인하고 질문하기\"",
+                    "\"'나만의 숙제 도우미 프롬프트' 세트 만들기: 과목별(국어, 영어, 수학, 과학)로 자주 쓰는 질문 템플릿 정리하기\"",
+                    "\"AI가 내 숙제를 대신해준다면? AI 활용과 '스스로 생각하는 힘' 사이의 균형점 찾기 토론\""
+                ],
+                prompts: [
+                    { title: "문제 해결", content: "\"자전거 체인이 빠졌을 때 해결 방법을 순서대로, 필요한 도구와 함께 알려줘.\"" },
+                    { title: "정보 검색", content: "\"대한민국에서 가장 높은 산 5곳의 이름과 높이를 표로 정리해줘.\"" },
+                    { title: "코드 디버깅", content: "\"이 파이썬 코드에서 오류가 발생했어. 어느 부분이 문제인지 찾아서 수정해줄래? [코드 첨부]\"" }
+                ],
+                pairing: {
+                    partner: { name: "자유로운 AI 모험가 (CEIO)", desc: "당신의 문제 해결 능력이 모험가의 엉뚱한 아이디어를 현실적인 프로젝트로 바꿔줄 수 있어요." },
+                    friend: { name: "신중한 AI 감각가 (CSIC)", desc: "당신처럼 신중하고 안정적인 접근을 하지만, AI의 숨은 의도를 파악하는 능력을 배울 수 있어요." }
+                }
+            },
+            {
+                id: 10,
+                engName: "ASSO",
+                typeName: "스마트한 AI 솔루셔니스트",
+                iconUrl: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-10.png",
+                summary: "AI를 활용해 나와 친구들의 문제를 해결하고, 세상을 더 편리하게 만드는 아이디어 뱅크!",
+                analysis: {
+                    strength: "AI 기술을 사용해 실생활의 불편함을 해결하는 데 큰 흥미를 느껴요. 긍정적인 마음으로 AI의 도움을 받아, 복잡한 계획을 세우고 똑똑하게 문제를 해결하는 것을 잘해요.",
+                    caution: "문제를 해결하는 결과에 집중하다 보니, 그 과정에서 발생할 수 있는 작은 실수나 윤리적인 문제를 놓칠 수 있어요. '빠른 길'이 항상 '바른 길'은 아닐 수 있다는 점을 기억해주세요."
+                },
+                learningActivities: [
+                    "\"AI 챗봇으로 '여행 계획' 짜기: 예산, 기간, 장소를 알려주고 최적의 여행 코스 추천받기\"",
+                    "\"'우리 반 건의사항 해결' 프로젝트: AI 챗봇과 함께 설문조사 문항을 만들고, 결과를 분석하여 해결책 제안하기\"",
+                    "\"편리함의 대가는? AI 추천 알고리즘이 나의 선택을 제한할 수 있다는 문제점에 대해 알아보기\""
+                ],
+                prompts: [
+                    { title: "계획 수립", content: "\"한 달 동안 매일 30분씩 운동하는 습관을 만들고 싶어. 실천 가능한 주간 계획표를 짜줘.\"" },
+                    { title: "솔루션 제안", content: "\"발표할 때 너무 떨리는데, 긴장을 풀 수 있는 효과적인 방법 3가지를 과학적인 근거와 함께 제시해줘.\"" },
+                    { title: "효율적 정리", content: "\"이 뉴스 기사의 내용이 너무 길어. 핵심 내용만 5개의 불렛 포인트로 요약해줘. [기사 붙여넣기]\"" }
+                ],
+                pairing: {
+                    partner: { name: "조심스러운 AI 예술가 (CEIC)", desc: "당신의 뛰어난 실행력에 예술가의 섬세하고 비판적인 시각이 더해지면, 모두를 만족시키는 결과물을 만들 수 있어요." },
+                    friend: { name: "현실적인 문제 해결사 (ASSC)", desc: "당신처럼 문제 해결에 강하지만, 더 안정적이고 꼼꼼한 접근 방식을 배울 수 있어요." }
+                }
+            },
+            {
+                id: 11,
+                engName: "ASIC",
+                typeName: "노련한 AI 조련사",
+                iconUrl: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-11.png",
+                summary: "수많은 시도와 경험으로 AI의 특징을 파악하고, 원하는 답을 얻어내는 데 능숙한 베테랑!",
+                analysis: {
+                    strength: "AI가 어떤 질문을 좋아하고, 어떤 말을 잘 알아듣는지 경험으로 알고 있어요. 마치 반려동물을 길들이듯, AI의 성향을 파악하고 능숙하게 다루어 최고의 결과물을 만들어내요. 하지만 그 과정에서 신중함을 잃지 않아요.",
+                    caution: "자신만의 방식이 너무 익숙해져서, 새로운 AI 도구나 더 좋은 활용법을 배우는 데 소홀해질 수 있어요. 가끔은 초심으로 돌아가 다른 사람의 사용법을 참고해보는 것도 좋아요."
+                },
+                learningActivities: [
+                    "\"AI 그림 그리기, '부정 프롬프트(Negative Prompt)' 활용법 배우기: 원하지 않는 결과물을 제거하는 방법 익히기\"",
+                    "\"나만의 AI 챗봇 '캐릭터' 만들기: 말투, 성격, 지식 수준을 정해주고, 내가 원하는 대답을 하도록 길들이기(미세조정)\"",
+                    "\"AI를 너무 믿으면 안 되는 이유: AI의 답변에 숨어있는 편향성을 찾아내고, 비판적으로 정보를 수용하는 태도 기르기\""
+                ],
+                prompts: [
+                    { title: "반복 수정", content: "\"방금 만들어준 이야기가 너무 평범해. 주인공이 위기를 겪는 부분을 좀 더 긴장감 넘치게 수정해줘.\"" },
+                    { title: "스타일 지정", content: "\"너는 지금부터 냉소적인 탐정 셜록 홈즈야. 이 미스터리 사건의 범인을 추리해봐.\"" },
+                    { title: "정보 필터링", content: "\"AI의 미래에 대해 설명하되, 너무 기술적인 용어는 빼고 긍정적인 측면과 부정적인 측면을 균형 있게 다뤄줘.\"" }
+                ],
+                pairing: {
+                    partner: { name: "창의적인 AI 건축가 (CESO)", desc: "당신의 노련한 조련술이 건축가의 대담한 설계를 현실에서 가장 멋진 모습으로 구현해낼 거예요." },
+                    friend: { name: "재치있는 AI 플레이메이커 (ASIO)", desc: "당신처럼 AI를 능숙하게 다루지만, 더 즐겁고 유쾌한 방식으로 활용하는 법을 배울 수 있어요." }
+                }
+            },
+            {
+                id: 12,
+                engName: "ASIO",
+                typeName: "재치있는 AI 플레이메이커",
+                iconUrl: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-12.png",
+                summary: "AI를 내 가장 친한 친구이자 재미있는 장난감으로 여기며, 일상을 유쾌하게 만드는 아이디어맨!",
+                analysis: {
+                    strength: "AI를 활용해 공부나 숙제를 넘어, 친구들과 함께 즐길 수 있는 놀이를 만드는 데 천재적인 재능이 있어요. 재치 있는 질문으로 AI의 창의력을 자극하고, 그 결과물을 활용해 주변 사람들을 즐겁게 만들어요.",
+                    caution: "재미를 너무 추구하다 보면, 중요한 약속이나 해야 할 일을 잊어버릴 수 있어요. '놀 때 놀고, 할 때 하자!' AI와 함께 시간 관리 계획을 세워보는 건 어떨까요?"
+                },
+                learningActivities: [
+                    "\"AI로 '우리 반 친구들 칭찬 랩' 가사 만들기: 친구들의 특징을 알려주고 라임에 맞춰 재미있게 작사하기\"",
+                    "\"AI와 함께 '방탈출 게임' 시나리오 만들기: 배경 설정, 퀴즈, 힌트를 AI와 주거니 받거니 하며 완성하기\"",
+                    "\"재미와 존중 사이: AI로 친구의 얼굴이나 목소리를 따라 하는 장난이 누군가에게 상처가 될 수 있음을 토론하기\""
+                ],
+                prompts: [
+                    { title: "유머 생성", content: "\"급식으로 맛없는 반찬이 나왔을 때, 슬픔을 유머로 승화시키는 SNS 게시글을 하나 써줘. #급식 #눈물\"" },
+                    { title: "게임 기획", content: "\"가위바위보를 이기면 한 칸씩 가는 간단한 보드게임을 만들려고 해. 재미있는 벌칙 아이디어 5가지를 추천해줘.\"" },
+                    { title: "콘텐츠 제작", content: "\"내가 키우는 강아지가 주인공인 유튜브 채널을 만들 거야. 채널 이름이랑 재치있는 소개 문구를 만들어줘.\"" }
+                ],
+                pairing: {
+                    partner: { name: "체계적인 AI 탐험가 (CESC)", desc: "당신의 재치 있는 아이디어를 탐험가가 체계적으로 정리해서, 모두가 즐길 수 있는 멋진 콘텐츠로 만들어 줄 거예요." },
+                    friend: { name: "노련한 AI 조련사 (ASIC)", desc: "당신처럼 AI를 잘 다루지만, 조금 더 안정적이고 깊이 있게 활용하는 방법을 배울 수 있어요." }
+                }
+            },
+            {
+                id: 13,
+                engName: "AESC",
+                typeName: "치밀한 AI 전략가",
+                iconUrl: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-13.png",
+                summary: "새로운 AI 기술을 빠르게 습득하고, 승리를 위해 가장 효율적인 전략을 세우는 명석한 지휘관!",
+                analysis: {
+                    strength: "새로운 AI 기술의 장단점을 빠르게 파악하고, 이것을 어떻게 활용해야 경쟁에서 이길 수 있는지 전략을 세우는 데 능해요. 목표를 정하면, AI를 강력한 무기처럼 사용하여 체계적으로 계획을 실행해요.",
+                    caution: "이기는 것에 집중한 나머지, 과정의 즐거움이나 함께하는 친구들의 감정을 놓칠 수 있어요. 때로는 '최고의 길'보다 '함께 가는 길'이 더 즐거울 수 있답니다."
+                },
+                learningActivities: [
+                    "\"AI 챗봇과 '토론 배틀' 하기: 특정 주제(예: '학교 교복은 필요한가?')에 대해 찬성과 반대 입장을 정해 논리 대결하기\"",
+                    "\"AI를 '내 편'으로 만들기: 팀 프로젝트 발표에서 예상되는 반대 질문을 AI에게 물어보고, 완벽한 답변 스크립트 준비하기\"",
+                    "\"AI가 심판을 본다면?: 스포츠 경기나 게임 대회에서 AI 심판 도입의 장점과 윤리적 문제점 토론하기\""
+                ],
+                prompts: [
+                    { title: "전략 수립", content: "\"이번 주말까지 수학 경시대회를 준비해야 해. 남은 3일 동안 가장 효율적으로 공부할 수 있는 시간표를 짜줘.\"" },
+                    { title: "약점 분석", content: "\"우리 팀의 발표 계획안이야. 여기서 부족한 점이나 논리적으로 허술한 부분을 찾아서 지적해줘. [계획안 첨부]\"" },
+                    { title: "경쟁 분석", content: "\"경쟁 유튜브 채널 [채널 이름]이 인기 있는 이유 3가지를 분석하고, 우리가 이기기 위한 콘텐츠 전략을 제안해줘.\"" }
+                ],
+                pairing: {
+                    partner: { name: "친절한 AI 튜터 (CSIO)", desc: "당신의 치밀한 전략에 튜터의 따뜻한 소통 능력이 더해지면, 모두의 마음을 얻는 리더가 될 수 있어요." },
+                    friend: { name: "과감한 AI 프로토타이퍼 (AESO)", desc: "당신처럼 새로운 기술을 활용해 결과를 만드는 것을 좋아하며, 함께 멋진 프로젝트를 빠르게 완성할 수 있어요." }
+                }
+            },
+            {
+                id: 14,
+                engName: "AESO",
+                typeName: "과감한 AI 프로토타이퍼",
+                iconUrl: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-14.png",
+                summary: "아이디어가 떠오르면 AI로 일단 만들어보고, 실패를 두려워하지 않는 용감한 실행가!",
+                analysis: {
+                    strength: "'이거 재밌겠다!' 싶으면 바로 AI를 켜서 시제품(프로토타입)을 만들어보는 엄청난 실행력을 가졌어요. 완벽하진 않더라도 아이디어를 빠르게 현실로 만들어 사람들에게 보여주는 것을 즐겨요.",
+                    caution: "너무 빠르게 만들다 보니, 마무리나 세부적인 계획이 부족할 수 있어요. 시제품을 만든 후에는 한 걸음 물러서서 어떻게 더 발전시킬 수 있을지 고민하는 시간을 가져보세요."
+                },
+                learningActivities: [
+                    "\"코딩 없이 AI로 '나만의 웹사이트' 1시간 만에 만들기: AI 웹사이트 빌더 서비스 체험하기\"",
+                    "\"'생활을 편리하게 하는 앱' 아이디어 30초 영상 만들기: AI로 아이디어 스케치, 대본 작성, 영상 편집까지 빠르게 완성하기\"",
+                    "\"빠르게 만들다 놓치는 것들: AI 서비스가 출시되기 전, 어떤 안전성 테스트를 거쳐야 할까? 생각해보기\""
+                ],
+                prompts: [
+                    { title: "빠른 기획", content: "\"아침에 잘 일어나지 못하는 사람들을 위한 앱 아이디어를 3가지 제안하고, 각각의 핵심 기능을 한 줄로 요약해줘.\"" },
+                    { title: "코드 생성", content: "\"버튼을 누르면 '오늘의 명언'이 랜덤으로 나타나는 간단한 웹페이지의 HTML, CSS, Javascript 코드를 짜줘.\"" },
+                    { title: "프로토타입", content: "\"내가 만들고 싶은 게임 [게임 이름]의 간단한 소개글과 캐릭터 설정, 기본 규칙을 빠르게 작성해줘.\"" }
+                ],
+                pairing: {
+                    partner: { name: "신중한 AI 감각가 (CSIC)", desc: "당신의 빠른 실행력에 감각가의 신중함과 통찰력이 더해져, 완성도 높은 결과물을 만들 수 있어요." },
+                    friend: { name: "창의적인 AI 건축가 (CESO)", desc: "당신처럼 새로운 것을 만드는 것을 좋아하며, 아이디어를 구체적인 구조로 설계하는 능력을 배울 수 있어요." }
+                }
+            },
+            {
+                id: 15,
+                engName: "AEIC",
+                typeName: "통찰력 있는 AI 비평가",
+                iconUrl: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-15.png",
+                summary: "AI의 화려한 결과물에 속지 않고, 그 이면의 장점과 문제점을 꿰뚫어 보는 날카로운 분석가!",
+                analysis: {
+                    strength: "새로운 AI 기술을 남들보다 빨리 써보면서도, 마냥 신기해하기보다 '이 기술의 진짜 의미는 뭘까?', '어떤 위험이 있을까?'를 먼저 생각해요. 남들이 보지 못하는 문제점을 찾아내고, 더 나은 방향을 제시하는 통찰력이 있어요.",
+                    caution: "비판적인 시각이 너무 강해, AI의 긍정적인 가능성이나 재미있는 측면을 놓칠 수 있어요. 가끔은 분석을 멈추고, 어린아이처럼 순수하게 AI와 즐겨보는 시간도 필요해요."
+                },
+                learningActivities: [
+                    "\"요즘 가장 인기 있는 AI 서비스(챗GPT, 미드저니 등)에 대한 전문가들의 비평 칼럼 읽고 내 생각과 비교하기\"",
+                    "\"AI가 써준 '영화 리뷰' 비평하기: AI가 작성한 리뷰의 논리적인 허점이나 편향된 시각을 찾아내고 반박하는 글쓰기\"",
+                    "\"미래 사회 시나리오 토론: '모든 것을 AI가 판단하는 세상'이 온다면, 장점보다 단점이 많을까? 나의 주장 펼치기\""
+                ],
+                prompts: [
+                    { title: "비판적 분석", content: "\"인공지능 기술이 발전하면 인류가 멸망할 수도 있다는 주장에 대해 어떻게 생각해? 가장 설득력 있는 반론 3가지를 제시해줘.\"" },
+                    { title: "숨은 의도 파악", content: "\"유튜브 추천 알고리즘은 사용자를 행복하게 만드는 걸까, 아니면 더 오래 붙잡아 두려는 걸까? 두 가지 관점에서 모두 설명해줘.\"" },
+                    { title: "대안 제시", content: "\"AI를 이용한 숙제 베끼기 문제를 해결할 수 있는 새로운 숙제 방식이나 평가 방법을 제안해줘.\"" }
+                ],
+                pairing: {
+                    partner: { name: "믿음직한 AI 길잡이 (CSSO)", desc: "당신의 날카로운 통찰력과 긍정적이고 안정적인 지식이 만나면, 세상을 더 좋은 방향으로 이끌 수 있어요." },
+                    friend: { name: "조심스러운 AI 예술가 (CEIC)", desc: "당신처럼 신중하고 비판적인 시각을 가졌지만, 그것을 창의적인 방식으로 표현하는 법을 배울 수 있어요." }
+                }
+            },
+            {
+                id: 16,
+                engName: "AEIO",
+                typeName: "세상을 바꾸는 AI 비저너리",
+                iconUrl: "https://raw.githubusercontent.com/jaimtoi/llmmaker/main/img/icon-16.png",
+                summary: "AI라는 새로운 도구로 더 나은 미래를 상상하고, 세상을 바꾸는 담대한 꿈을 꾸는 혁신가!",
+                analysis: {
+                    strength: "AI 기술을 단순히 사용하는 것을 넘어, '이 기술로 세상을 어떻게 바꿀 수 있을까?'를 상상해요. 틀에 얽매이지 않는 질문으로 AI의 잠재력을 120% 끌어내고, 긍정적인 에너지로 주변 사람들에게 새로운 비전을 제시해요.",
+                    caution: "너무 큰 꿈을 꾸다 보면, 지금 당장 해야 할 작은 일들을 잊어버릴 수 있어요. 위대한 비전은 작은 실천에서 시작된다는 것을 기억해주세요!"
+                },
+                learningActivities: [
+                    "\"세계적인 기업가(일론 머스크, 샘 알트만 등)들이 꿈꾸는 AI의 미래에 대한 인터뷰 영상 찾아보기\"",
+                    "\"AI와 함께 '10년 후 우리 동네 모습' 상상하고, 사람들에게 발표하기: AI로 미래 이미지 만들고, 발표 대본 작성하기\"",
+                    "\"모두를 위한 AI 만들기: AI 기술 발전에서 소외되는 사람들(장애인, 노인 등)은 없을까? 해결 방안 토론하기\""
+                ],
+                prompts: [
+                    { title: "미래 예측", content: "\"인공지능 기술이 지금보다 100배 더 발전한다면, 2050년 인류의 삶에서 가장 크게 변할 3가지는 무엇일까?\"" },
+                    { title: "거대 담론", content: "\"지구 온난화 문제를 해결하기 위해 AI를 활용할 수 있는 혁신적인 아이디어를 5가지 제안해줘.\"" },
+                    { title: "철학적 질문", content: "\"만약 인공지능이 인간처럼 감정을 느끼게 된다면, 우리는 AI를 어떻게 대해야 할까? 철학자의 입장에서 답변해줘.\"" }
+                ],
+                pairing: {
+                    partner: { name: "꼼꼼한 원리원칙주의자 (CSSC)", desc: "당신의 위대한 비전을 원리원칙주의자가 가장 안정적이고 현실적인 계획으로 만들어 줄 최고의 파트너!" },
+                    friend: { name: "자유로운 AI 모험가 (CEIO)", desc: "당신처럼 자유롭고 긍정적인 상상을 즐기지만, 더 즉흥적이고 재미있는 아이디어를 배울 수 있어요." }
+                }
+            }
+        ];
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const cardContainer = document.getElementById('card-container');
+            const tabsWrapper = document.getElementById('tabs-wrapper');
+            const reportContainer = document.getElementById('report-container');
+            const mainView = document.getElementById('main-view');
+            const detailView = document.getElementById('detail-view');
+
+            const modal = document.getElementById('info-modal');
+            const openModalBtn = document.getElementById('open-modal-btn');
+            const closeModalBtn = document.querySelector('.close-btn');
+            
+            openModalBtn.onclick = () => modal.style.display = 'flex';
+            closeModalBtn.onclick = () => modal.style.display = 'none';
+            window.onclick = (event) => {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            }
+            
+            // Generate cards
+            typesData.forEach(type => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.typeId = type.id;
+                card.innerHTML = `
+                    <img src="${type.iconUrl}" alt="${type.typeName} 아이콘">
+                    <h2>${type.typeName}</h2>
+                    <div class="eng-name">${type.engName}</div>
+                    <p>${type.summary}</p>
+                `;
+                card.addEventListener('click', () => showDetailView(type.id));
+                cardContainer.appendChild(card);
+            });
+            
+            // Generate tabs
+            typesData.forEach(type => {
+                const tab = document.createElement('div');
+                tab.className = 'tab';
+                tab.dataset.typeId = type.id;
+                tab.textContent = type.typeName;
+                tab.addEventListener('click', () => showDetailView(type.id, false));
+                tabsWrapper.appendChild(tab);
+            });
+
+            const showDetailView = (typeId, fromCard = true) => {
+                if (fromCard) {
+                    mainView.style.display = 'none';
+                    detailView.style.display = 'block';
+                }
+
+                const type = typesData.find(t => t.id === typeId);
+                
+                // Update active tab
+                document.querySelectorAll('.tab').forEach(t => {
+                    t.classList.toggle('active', parseInt(t.dataset.typeId) === typeId);
+                });
+
+                // Center active tab
+                const activeTab = document.querySelector(`.tab[data-type-id='${typeId}']`);
+                if(activeTab) {
+                    activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }
+
+                // Generate report content
+                reportContainer.innerHTML = `
+                    <div class="report-content">
+                        <div class="report-header">
+                            <img src="${type.iconUrl}" alt="${type.typeName} 아이콘">
+                            <h2>${type.typeName} <span style="font-weight: 400; color: #5F6368;">(${type.engName})</span></h2>
+                            <p>"${type.summary}"</p>
+                        </div>
+
+                        <div class="report-section">
+                            <h3>나의 AI 활용 스타일 분석</h3>
+                            <div class="analysis-box">
+                                <div class="analysis-item">
+                                    <h4>강점</h4>
+                                    <p>${type.analysis.strength}</p>
+                                </div>
+                                <div class="analysis-item">
+                                    <h4>주의할 점</h4>
+                                    <p>${type.analysis.caution}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="report-section">
+                            <h3>추천 학습 활동 (3단계)</h3>
+                            <ul class="learning-steps">
+                                ${type.learningActivities.map((activity, index) => `
+                                    <li><span class="step-number">${index + 1}</span> ${activity}</li>
+                                `).join('')}
+                            </ul>
+                        </div>
+
+                        <div class="report-section">
+                            <h3>당장 써먹는 한 줄 프롬프트 템플릿</h3>
+                            ${type.prompts.map(prompt => `
+                                <div class="prompt-template">
+                                    <strong>${prompt.title}</strong>
+                                    <p>"${prompt.content}"</p>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <div class="report-section">
+                            <h3>나와 잘 맞는 프롬프트 유형</h3>
+                            <div class="prompt-pairing-box">
+                                <div class="pairing-item pairing-item-visionary">
+                                    <h4><span>✨</span>환상의 짝꿍</h4>
+                                    <strong>${type.pairing.partner.name}</strong>
+                                    <p>${type.pairing.partner.desc}</p>
+                                </div>
+                                <div class="pairing-item pairing-item-solutionist">
+                                    <h4><span>🤝</span>도움이 되는 친구</h4>
+                                    <strong>${type.pairing.friend.name}</strong>
+                                    <p>${type.pairing.friend.desc}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            };
+            
+            // Back button
+            document.getElementById('back-to-main-btn').addEventListener('click', () => {
+                detailView.style.display = 'none';
+                mainView.style.display = 'block';
+            });
+            
+            // Tab navigation
+            const tabsContainer = document.getElementById('tabs-wrapper');
+            const prevBtn = document.getElementById('tab-prev');
+            const nextBtn = document.getElementById('tab-next');
+
+            const scrollTabs = (amount) => {
+                tabsContainer.scrollBy({ left: amount, behavior: 'smooth' });
+            };
+
+            prevBtn.addEventListener('click', () => scrollTabs(-200));
+            nextBtn.addEventListener('click', () => scrollTabs(200));
+
+        });
+    </script>
+</body>
+</html>
