@@ -1,1 +1,261 @@
-..
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 활용 유형 진단 로직 가이드</title>
+    <style>
+        /* Google Fonts & CSS Reset */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
+        :root {
+            --background-color: #F8F9FA;
+            --card-background-color: #FFFFFF;
+            --primary-color: #4285F4; /* Google Blue */
+            --text-color: #202124;
+            --secondary-text-color: #5F6368;
+            --border-color: #DADCE0;
+            --highlight-bg-color: #F1F3F4;
+            --border-radius: 8px;
+            --shadow: 0 4px 6px rgba(32, 33, 36, 0.08);
+            --transition-speed: 0.3s;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 50px;
+            padding-bottom: 50px;
+            line-height: 1.7;
+        }
+
+        /* Layout */
+        .container {
+            width: 90%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        /* Typography */
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--primary-color);
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            font-weight: 500;
+            margin-top: 32px;
+            margin-bottom: 16px;
+        }
+        
+        strong {
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        p {
+            margin-bottom: 12px;
+            color: var(--secondary-text-color);
+        }
+
+        /* Card UI */
+        .card {
+            background-color: var(--card-background-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+        
+        /* Content Specific Styles */
+        ul {
+            list-style-position: inside;
+            padding-left: 0;
+        }
+        
+        li {
+            margin-bottom: 10px;
+            color: var(--secondary-text-color);
+        }
+
+        .description-block {
+            background-color: var(--highlight-bg-color);
+            border-left: 4px solid var(--border-color);
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            padding: 16px 20px;
+            margin: 16px 0 24px 0;
+        }
+        
+        .description-block p {
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .type-description {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .type-description strong {
+            font-size: 1.1rem;
+            color: var(--text-color);
+        }
+        
+        .type-description p {
+            margin-left: 10px;
+        }
+
+        .code-example {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #e8eaed;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 0;
+            }
+            .container {
+                width: 95%;
+            }
+            h1 { font-size: 2rem; margin-bottom: 30px; }
+            h2 { font-size: 1.5rem; }
+            h3 { font-size: 1.2rem; }
+            .card { padding: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <main class="container">
+        <h1>AI 활용 유형 진단 로직 가이드</h1>
+
+        <div class="card">
+            <h2>1단계: 진단 시작 및 질문 제시</h2>
+            <ul>
+                <li>진단 프로세스는 4개의 '진단 축'을 평가하기 위한 질문들로 구성됩니다.</li>
+                <li>각 축마다 3개의 질문을 제시하여 사용자의 성향을 정확하게 파악합니다.</li>
+            </ul>
+
+            <div class="description-block">
+                <p><strong>진행 방식:</strong> 각 축(이해, 방식, 스타일, 인식)에 해당하는 질문 3개를 순서대로 사용자에게 제시하며, 상반된 두 개의 선택지(A/B) 중 하나를 선택하게 합니다. 선택된 답변은 각 축의 성향으로 기록됩니다.</p>
+            </div>
+
+            <!-- 이해 축 -->
+            <h3>이해 (Comprehension): C (개념) vs A (응용)</h3>
+            <p><strong>무엇을 측정하는가?</strong> AI를 학습하고 접근할 때, 근본적인 '원리'에 집중하는지, 아니면 '실용적인 활용법'에 집중하는지를 판단합니다.</p>
+            <div class="type-description">
+                <strong>C (Concept - 개념 중심)</strong>
+                <p>"AI가 어떻게 작동하지?", "왜 이런 결과가 나올까?"처럼 내부 동작 원리, 기본 개념, 기술적 배경에 대한 호기심이 강한 유형입니다.</p>
+            </div>
+            <div class="type-description">
+                <strong>A (Application - 응용 중심)</strong>
+                <p>"이걸로 뭘 할 수 있지?", "어떻게 하면 내 숙제를 더 빨리 끝낼 수 있을까?"처럼 AI를 도구로써 실제 문제 해결에 즉시 적용하려는 성향이 강한 유형입니다.</p>
+            </div>
+            
+            <!-- 방식 축 -->
+            <h3>방식 (Approach): S (안정) vs E (탐험)</h3>
+            <p><strong>무엇을 측정하는가?</strong> AI를 활용할 때, 검증되고 안정적인 방식을 선호하는지, 아니면 새롭고 실험적인 방식을 시도하는 것을 즐기는지를 판단합니다.</p>
+            <div class="type-description">
+                <strong>S (Stable - 안정형)</strong>
+                <p>이미 알려진 효과적인 프롬프트, 예측 가능한 결과를 내는 안정적인 기능 사용을 선호합니다. 실패의 위험을 최소화하려는 성향입니다.</p>
+            </div>
+            <div class="type-description">
+                <strong>E (Exploratory - 탐험형)</strong>
+                <p>AI의 새로운 기능, 예상치 못한 답변, 알려지지 않은 활용법을 찾아내는 것을 즐깁니다. 시행착오를 두려워하지 않는 성향입니다.</p>
+            </div>
+
+            <!-- 스타일 축 -->
+            <h3>스타일 (Style): S (구조) vs I (직관)</h3>
+            <p><strong>무엇을 측정하는가?</strong> AI에게 명령을 내리고 소통할 때, 체계적이고 명확한 계획을 따르는지, 아니면 즉흥적이고 유연한 대화를 선호하는지를 판단합니다.</p>
+            <div class="type-description">
+                <strong>S (Structured - 구조형)</strong>
+                <p>단계별 지시, 명확한 역할 부여, 표나 목록과 같은 구조화된 결과물을 요청하는 것을 선호합니다. 계획적이고 체계적인 접근을 합니다.</p>
+            </div>
+            <div class="type-description">
+                <strong>I (Intuitive - 직관형)</strong>
+                <p>친구와 대화하듯 자유롭게 질문을 던지고, 추상적인 아이디어를 탐구하며, AI의 반응에 따라 대화의 흐름을 바꿔나가는 것을 선호합니다.</p>
+            </div>
+            
+            <!-- 인식 축 -->
+            <h3>인식 (Perception): C (신중) vs O (낙관)</h3>
+            <p><strong>무엇을 측정하는가?</strong> AI의 결과물과 기술 자체를 받아들일 때, 비판적이고 조심스러운 태도를 보이는지, 아니면 긍정적이고 수용적인 태도를 보이는지를 판단합니다.</p>
+            <div class="type-description">
+                <strong>C (Cautious - 신중형)</strong>
+                <p>AI의 답변이 틀릴 수 있다는 '환각(Hallucination)' 현상을 경계하고, 항상 정보의 출처를 확인하며, 잠재적인 위험성을 먼저 고려하는 태도를 보입니다.</p>
+            </div>
+            <div class="type-description">
+                <strong>O (Optimistic - 낙관형)</strong>
+                <p>AI가 가져올 긍정적인 변화와 가능성에 더 주목하며, AI의 답변을 신뢰하고 적극적으로 활용하려는 태도를 보입니다.</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>2단계: 결과 도출 로직</h2>
+            <p>사용자가 12개 질문에 대한 답변을 마치면, 시스템은 아래 로직에 따라 최종 유형 코드를 생성합니다.</p>
+            
+            <h3>축별 성향 집계 (예시)</h3>
+            <div class="description-block">
+                <ul>
+                    <li><strong>이해 축:</strong> C를 선택한 개수와 A를 선택한 개수를 비교합니다.
+                        <ul style="margin-top: 8px; padding-left: 20px;">
+                            <li>C > A 이면, 첫 번째 코드는 C가 됩니다.</li>
+                            <li>A > C 이면, 첫 번째 코드는 A가 됩니다.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+            <h3>최종 유형 코드 조합</h3>
+             <div class="description-block">
+                <ul>
+                    <li>위의 과정에서 결정된 4개의 알파벳 코드를 순서대로 조합하여 최종 유형 코드를 생성합니다.</li>
+                    <li><strong>예시:</strong> 사용자가 [이해 축='A', 방식 축='E', 스타일 축='S', 인식 축='C']로 판별되었다면, 최종 유형 코드는 <code class="code-example">AESC</code>가 됩니다.</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>3단계: 최종 결과 제시</h2>
+            <p>생성된 최종 유형 코드(예: <code class="code-example">AESC</code>)를 기반으로, 정의된 16가지 유형 중 해당 유형의 정보를 사용자에게 시각적으로 제시합니다.</p>
+
+            <h3>표시 정보</h3>
+            <p>'AESC: 치밀한 AI 전략가' 유형의 모든 정보를 아래 구조에 맞게 시각적으로 제시합니다.</p>
+            <ul style="list-style: none; padding-left: 0;">
+                <li><strong>유형 카드:</strong> 유형 이름, 아이콘 설명, 한 줄 요약</li>
+                <li><strong>나의 AI 활용 스타일 분석:</strong> 강점, 주의할 점</li>
+                <li><strong>추천 학습 활동 (3단계):</strong> 1단계, 2단계, 3단계 활동</li>
+                <li><strong>당장 써먹는 한 줄 프롬프트 템플릿:</strong> 3가지 프롬프트 예시</li>
+                <li><strong>나와 잘 맞는 프롬프트 유형:</strong> 환상의 짝꿍, 도움이 되는 친구</li>
+            </ul>
+        </div>
+
+    </main>
+
+</body>
+</html>```
